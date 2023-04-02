@@ -9,3 +9,10 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 # Configure application - this lets flask know to use the "app.py" file
 app = Flask(__name__)
+
+@app.route('/', methods=["GET", "POST"])
+def index():
+    return render_template("index.html") 
+
+
+
