@@ -10,8 +10,9 @@ from werkzeug.security import check_password_hash, generate_password_hash
 # Configure application - this lets flask know to use the "app.py" file
 app = Flask(__name__)
 
-# Disable caching + enable debug mode:
+# Disable caching + enable debug/auto reload of page:
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.debug = True
 
 @app.route('/', methods=["GET", "POST"])

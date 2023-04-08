@@ -7,6 +7,50 @@
 {% block main %}
 
 <h1> Team Dashboard </h1>
-<p>Hello, World.</p>
+
+<h3>Monthly Bodyweight Tracking</h3>
+
+<!-- Insert the current date using the luxon script in header -->
+<p>
+  The date today is: <span id="date-placeholder"> </span>
+</p>
+
+<!-- Need to build out logic so chart can identify the month + days in this month, to populate the x axis -->
+<canvas id="monthly-bw-graph" style="max-width: 60%;"></canvas>
+<!-- Dummy data borrowed from W3schools to visualise front-end -->
+<script>
+  const xValues = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sept", "Oct", "Sept", "Nov", "Dec"];
+    
+  new Chart("monthly-bw-graph", {
+    type: "line",
+    data: {
+      labels: xValues,
+      datasets: [{ 
+        label: "Tommy",
+        data: [860,1140,1060,1060,1070,1110,1330,2210,7830,2478],
+        borderColor: "red",
+        fill: false
+      }, { 
+        label: "Nathan",
+        data: [1600,1700,1700,1900,2000,2700,4000,5000,6000,7000],
+        borderColor: "green",
+        fill: false
+      }, { 
+        label: "Raymond",
+        data: [300,700,2000,5000,6000,,2000,,200,100],
+        borderColor: "blue",
+        fill: false
+      }]
+    },
+    options: {
+      legend: {display: true}
+    }
+  });
+  </script>
+
+<!-- End dummy data -->
+
+<h5> Team Training Highlights: </h5>
+<p>Lorem ipsum yada yada.</p>
 
 {% endblock %}
