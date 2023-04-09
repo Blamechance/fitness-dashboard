@@ -7,13 +7,12 @@
 {% block main %}
 
 <h1> Team Dashboard </h1>
-
-<h3>Monthly Bodyweight Tracking</h3>
+<br>
 
 <!-- Insert the current date using the luxon script in header -->
-<p>
-  The date today is: <span id="date-placeholder"> </span>
-</p>
+<h3>
+  <span id="date-placeholder"> </span> Bodyweight Tracking:
+</h3>
 
 <!-- Need to build out logic so chart can identify the month + days in this month, to populate the x axis -->
 <canvas id="monthly-bw-graph" style="max-width: 60%;"></canvas>
@@ -27,26 +26,31 @@
       labels: xValues,
       datasets: [{ 
         label: "Tommy",
-        data: [860,1140,1060,1060,1070,1110,1330,2210,7830,2478],
+        data: [75.5,76,77,77.5,78,79,79,79.5,80,79],
         borderColor: "red",
         fill: false
       }, { 
         label: "Nathan",
-        data: [1600,1700,1700,1900,2000,2700,4000,5000,6000,7000],
+        data: [80, 80.8, 81.6, 82.2, 82.8, 83.6, 83.6, 84.2, 84.8, 85.0],
         borderColor: "green",
         fill: false
       }, { 
         label: "Raymond",
-        data: [300,700,2000,5000,6000,,2000,,200,100],
+        data: [85, 85.6, 86.3, 87.0, 87.7, 88.4, 88.4, 89.1, 89.8, 90.0],
         borderColor: "blue",
         fill: false
       }]
     },
     options: {
-      legend: {display: true}
+      legend: {display: true},
+      scales: { 
+        x: {title: { display: true, text: 'Months'}},
+        y: { title: { display: true, text: 'Weight (kgs)'}}
+      }   
     }
   });
-  </script>
+</script>
+
 
 <!-- End dummy data -->
 

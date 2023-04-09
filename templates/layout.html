@@ -11,9 +11,9 @@
         <script>
           function myFunction() {
             //Get current date using luxon
-            var currentDate = luxon.DateTime.now();
-            //find the span element where date will be inserted
-            document.getElementById("date-placeholder").innerHTML = currentDate.toFormat("dd-MM-yyyy");
+            var currentDate = luxon.DateTime.now().monthLong;
+            //find the span element where date will be inserted and pass the current month to it
+            document.getElementById("date-placeholder").innerHTML = currentDate;
           };
         </script> 
 
