@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+{% extends "athletelayout.html" %}
 
 {% block title %}
     Tommy
@@ -9,4 +9,35 @@
 <h1> Tommy's statistics </h1>
 <p>Hello, World - this is Tommy.</p>
 
+<h3> Bodyweight Tracking:</h3>
+
+<canvas id="tommy-bw-graph" style="max-width: 60%;"></canvas>
+
+<script>
+
+</script>
+
 {% endblock %}
+
+//Default graph dataset span will be 12 months:
+const xValues = '{{ tommy_12month_x }}'; 
+const yValues = [50, 52, 54, 56, 58, 60, 62, 64, 66, 68, 70, 72, 74, 76, 78, 80, 82, 84, 86, 88, 90, 92, 94, 96, 98, 100]; 
+
+new Chart("tommy-weight-chart", {
+    type: "line",
+    data: {
+        labels: xValues, 
+        datasets: [{
+            label: "Tommy", 
+            data: '{{ tommy-chart-data }}',
+            borderColor: "red",
+            fill: false
+        }]
+    }
+});
+
+//Add an event listener button that can change the xValues that is passed in. 
+//3-months:
+//6 months: 
+//12-months: 
+//All-time: 
