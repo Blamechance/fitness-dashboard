@@ -13,31 +13,31 @@
 
 <canvas id="tommy-bw-graph" style="max-width: 60%;"></canvas>
 
-<script>
 
+<script>
+    //Default graph dataset span will be 12 months:
+    const xValues =  JSON.parse('{{ x_axis_12m | tojson }}');
+    const yValues = [50, 60, 70, 80, 90, 100]; 
+
+    new Chart("tommy-bw-graph", {
+        type: "line",
+        data: {
+            labels: xValues, 
+            datasets: [{
+                label: "Tommy", 
+                data: [75.5,76,77,77.5,78,79,79,79.5,80,79], //eventually replace with a list that is passed in -- this is the data points 
+                borderColor: "red",
+                fill: false
+            }]
+        }
+    });
 </script>
 
 {% endblock %}
-
-//Default graph dataset span will be 12 months:
-const xValues = '{{ tommy_12month_x }}'; 
-const yValues = [50, 52, 54, 56, 58, 60, 62, 64, 66, 68, 70, 72, 74, 76, 78, 80, 82, 84, 86, 88, 90, 92, 94, 96, 98, 100]; 
-
-new Chart("tommy-weight-chart", {
-    type: "line",
-    data: {
-        labels: xValues, 
-        datasets: [{
-            label: "Tommy", 
-            data: '{{ tommy-chart-data }}',
-            borderColor: "red",
-            fill: false
-        }]
-    }
-});
 
 //Add an event listener button that can change the xValues that is passed in. 
 //3-months:
 //6 months: 
 //12-months: 
 //All-time: 
+//add logic to display varying labels/headings to show the time range. 
