@@ -44,10 +44,10 @@ def checkin():
 @app.route('/tommy', methods=["GET", "POST"])
 def tommy():
     #12 months is default graph.     
-    x_axis_12m = findlast12m()
+    x_axis = fetch3mXAxis()
+    #TODO: event listener functionality to return different datasets based on interaction. 
     
-    
-    return render_template("tommy.html", x_axis_12m = x_axis_12m) 
+    return render_template("tommy.html", x_axis = x_axis) 
         
 @app.route('/nathan', methods=["GET", "POST"])
 def nathan():
@@ -57,7 +57,7 @@ def nathan():
 def raymond():
     return render_template("raymond.html") 
 
-def findlast12m():
+def fetch12mXAxis():
     last12Months = [] #final list of months to pass to Tommy's chart
     monthListDigits = [] #temp buffer to create list of months. 
 
@@ -83,5 +83,36 @@ def findlast12m():
             
     print("Final month list to pass back for chart rendering: ", last12Months)
     return last12Months
+
+def fetch3mXAxis():
+    last3Months = [] #final list of months to pass to Tommy's chart
+    monthListDigits = [] #temp buffer to create list of months. 
+
+    #create a list of months in digit form: 
+    if currentMonth >= 3:
+        print("Correctly identified month is larger than March")
+        
+        for i in range(4):
+            monthListDigits.insert(0, (currentMonth-i))
+            
+    elif currentMonth < 3:
+        lastYrMonths = (3 - currentMonth)
+
+        #create a list counting backwards from current month
+        for i in range(currentMonth):
+            monthListDigits.insert(0, (currentMonth-i))
+            
+        #Adding months from last year: 
+        for j in range(12, (12 - lastYrMonths), -1):
+            monthListDigits.insert(0, j)
+        
+    #Convert the list of digits into their month abbrev. forms
+    for k in range(3):
+        targetMonthText = datetime.date(1, int(monthListDigits[k]), 1).strftime('%b')
+        last3Months.append(str(targetMonthText))
+            
+    print("Final month list to pass back for chart rendering: ", last3Months)
+    return last3Months
+    
     
 
