@@ -45,9 +45,12 @@ def checkin():
 def tommy():
     #12 months is default graph.     
     x_axis = fetch3mXAxis()
+    
+    minDate = min(x_axis)
+    maxDate = max(x_axis)
     #TODO: event listener functionality to return different datasets based on interaction. 
     
-    return render_template("tommy.html", x_axis = x_axis) 
+    return render_template("tommy.html", x_axis = x_axis, minDate = minDate, maxDate = maxDate) 
         
 @app.route('/nathan', methods=["GET", "POST"])
 def nathan():
@@ -90,8 +93,6 @@ def fetch3mXAxis():
 
     #create a list of months in digit form: 
     if currentMonth >= 3:
-        print("Correctly identified month is larger than March")
-        
         for i in range(4):
             monthListDigits.insert(0, (currentMonth-i))
             
@@ -108,11 +109,12 @@ def fetch3mXAxis():
         
     #Convert the list of digits into their month abbrev. forms
     for k in range(3):
-        targetMonthText = datetime.date(1, int(monthListDigits[k]), 1).strftime('%b')
+        targetMonthText = datetime.date(1, int(monthListDigits[k]), 1).strftime('%x')
         last3Months.append(str(targetMonthText))
-            
+    
     print("Final month list to pass back for chart rendering: ", last3Months)
     return last3Months
     
     
-
+    
+#TODO: Function to average the dataset. Make it universal, so it can average no matter the size of the dataset. 

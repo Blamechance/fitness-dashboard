@@ -15,21 +15,56 @@
 
 
 <script>
+    //TODO: Create JS objects for: 
+    //1. const chartData = { labels as passed by the fetch functions + datasets in dictionary format }
+    //2. const chartOptions = { configure options to be of type "time" + unit "month"  }
+    //3. Tweak the new Chart code to include these two. 
+    const chartData = {
+        //Note that these labels currently state months by referring to the first day of the month (e.g 04/01/2023)
+        labels: JSON.parse('{{ x_axis | tojson }}'),
+        datasets: {
+            label: "Tommys Data", 
+            data: [
+                //k,v pair
+                {x: '2023-02-15', y: 55},
+                //k,v pair
+                {x: '2023-03-15', y: 60},
+                //k,v pair
+                {x: '2023-04-15', y: 65},
+            ]
+        }
+    }; 
+
+    const chartOptions = {
+    scales: {
+        x: {
+        type: 'time',
+        time: {
+            unit: 'month',
+            displayFormats: {
+            month: 'MMM YYYY'
+            }
+        },
+        //This should be set dynamically based on x_axis:
+        min: JSON.parse('{{ minDate | tojson }}'),
+        max: JSON.parse('{{ maxDate | tojson }}')
+        },
+        y: {
+        ticks: {
+            beginAtZero: true
+        }
+        }
+    }
+    };
+
     //Default graph dataset span will be 12 months:
-    const xValues =  JSON.parse('{{ x_axis | tojson }}');
-    const yValues = [50, 60, 70, 80, 90, 100]; 
+    //const xValues =  JSON.parse('{{ x_axis | tojson }}');
+    //const yValues = [50, 60, 70, 80, 90, 100]; 
 
     new Chart("tommy-bw-graph", {
         type: "line",
-        data: {
-            labels: xValues, 
-            datasets: [{
-                label: "Tommy", 
-                data: [75.5,76,77,77.5,78,79,79,79.5,80,79], //eventually replace with a list that is passed in -- this is the data points 
-                borderColor: "red",
-                fill: false
-            }]
-        }
+        data: chartData,
+        options: chartOptions
     });
 </script>
 
