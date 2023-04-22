@@ -1,5 +1,6 @@
 import os
 import datetime
+import calendar
 import sqlite3
 
 from flask import Flask, flash, redirect, render_template, request, session
@@ -22,6 +23,8 @@ currentTimeDate = datetime.datetime.now()
 
 #return the current month as a digit
 currentMonth = int(currentTimeDate.strftime("%m")) #%m prints month as digit
+currentYear = int(currentTimeDate.strftime("%Y")) #e.g 2013, 2019 etc.
+lastYear = currentYear - 1
 
 
 @app.route('/', methods=["GET", "POST"])
@@ -90,6 +93,10 @@ def fetch12mXAxis():
 def fetch3mXAxis():
     last3Months = [] #final list of months to pass to Tommy's chart
     monthListDigits = [] #temp buffer to create list of months. 
+    
+    
+    if currentMonth < 3:
+        lastYrMonths = (3 - currentMonth)
 
     #create a list of months in digit form: 
     if currentMonth >= 3:
@@ -109,12 +116,19 @@ def fetch3mXAxis():
         
     #Convert the list of digits into their month abbrev. forms
     for k in range(3):
-        targetMonthText = datetime.date(1, int(monthListDigits[k]), 1).strftime('%x')
-        last3Months.append(str(targetMonthText))
+        #code to change montListDigits to have the full correct date incl. year:
+        #if month is Dec or Nov, it's from last year: 
+        if monthListDigits[k] <= 11: 
+            targetMonthText = datetime.date(1, int(monthListDigits[k]), 1).strftime('%b')
+            last3Months.append(str(targetMonthText) + str(lastYear))
+        else: 
+            targetMonthText = datetime.date(1, int(monthListDigits[k]), 1).strftime('%b')
+            last3Months.append(str(targetMonthText + "/" + currentYear + "/" + str(1)))
+            last3Months.append(str(targetMonthText + "/" + currentYear + "/" + str(15)))
+            
     
     print("Final month list to pass back for chart rendering: ", last3Months)
     return last3Months
     
-    
-    
 #TODO: Function to average the dataset. Make it universal, so it can average no matter the size of the dataset. 
+#default format to pass to chart.js is: 'MM/DD/YYYY'
