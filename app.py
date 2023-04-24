@@ -47,7 +47,7 @@ def checkin():
 @app.route('/tommy', methods=["GET", "POST"])
 def tommy():
     #12 months is default graph.     
-    x_axis = fetch12mXAxis()
+    x_axis = fetch6mXAxis()
     
     #TODO: event listener functionality to return different datasets based on interaction. 
     
@@ -91,6 +91,53 @@ def fetch12mXAxis():
         last12Months.append(str(targetMonthText) + " " + str(currentYear))
             
     return last12Months
+
+def fetch6mXAxis():
+    last6Months = [] #final list of months to pass to Tommy's chart
+    monthListDigits = [] #temp buffer to create list of months.     
+    
+    if currentMonth < 6:
+        lastYrMonths = (6 - currentMonth)
+
+    #create a list of months in digit form: 
+    if currentMonth >= 6:
+        for i in range(7):
+            monthListDigits.insert(0, (currentMonth-i))
+            
+    elif currentMonth < 6:
+        lastYrMonths = (6 - currentMonth)
+
+        #create a list counting backwards from current month
+        for i in range(currentMonth):
+            monthListDigits.insert(0, (currentMonth-i))
+                
+        #Adding months from last year:
+        for j in range(12, (12 - lastYrMonths), -1):
+            monthListDigits.insert(0, j)
+        
+    print(monthListDigits)
+    
+    #Convert the list of digits into their month abbrev. forms
+    #prev months first: 
+    for k in range(lastYrMonths):
+        targetMonthText = datetime.date(lastYear, int(monthListDigits[k]), 1).strftime("%d %b, %Y")
+        last6Months.append(str(targetMonthText))
+
+        targetMonthText = datetime.date(lastYear, int(monthListDigits[k]), 15).strftime("%d %b, %Y")
+        last6Months.append(str(targetMonthText))
+
+                
+    for m in range(lastYrMonths, 6, 1):
+        targetMonthText = datetime.date(1, int(monthListDigits[m]), 1).strftime('%b')
+        
+        targetMonthText = datetime.date(currentYear, int(monthListDigits[m]), 1).strftime("%d %b, %Y")
+        last6Months.append(str(targetMonthText))
+
+        targetMonthText = datetime.date(currentYear, int(monthListDigits[m]), 15).strftime("%d %b, %Y")
+        last6Months.append(str(targetMonthText))
+            
+    return last6Months
+    
 
 def fetch3mXAxis():
     last3Months = [] #final list of months to pass to Tommy's chart
