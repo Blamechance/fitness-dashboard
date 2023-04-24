@@ -26,11 +26,11 @@
             label: "Tommys Data", 
             data: [
                 //k,v pair
-                {x: '2023-02-15', y: 55},
+                {x: '03-15-2023', y: 55},
                 //k,v pair
                 {x: '2023-03-15', y: 60},
                 //k,v pair
-                {x: '2023-04-15', y: 65},
+                {x: '2023-04-15', y: 57},
             ]
         }]
     }; 
@@ -38,21 +38,7 @@
     const chartOptions = {
     scales: {
         x: {
-        type: 'time',
-        time: {
-            unit: 'month',
-            displayFormats: {
-            month: 'MMM YY'
-            }
-        },
-        //This should be set dynamically based on x_axis:
-        min: JSON.parse('{{ minDate | tojson }}'),
-        max: JSON.parse('{{ maxDate | tojson }}')
-        },
-        y: {
-        ticks: {
-            beginAtZero: true
-        }
+        type: 'time'
         }
     }
     };

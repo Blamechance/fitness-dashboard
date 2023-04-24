@@ -47,13 +47,11 @@ def checkin():
 @app.route('/tommy', methods=["GET", "POST"])
 def tommy():
     #12 months is default graph.     
-    x_axis = fetch3mXAxis()
+    x_axis = fetch12mXAxis()
     
-    minDate = min(x_axis)
-    maxDate = max(x_axis)
     #TODO: event listener functionality to return different datasets based on interaction. 
     
-    return render_template("tommy.html", x_axis = x_axis, minDate = minDate, maxDate = maxDate) 
+    return render_template("tommy.html", x_axis = x_axis) 
         
 @app.route('/nathan', methods=["GET", "POST"])
 def nathan():
@@ -69,31 +67,34 @@ def fetch12mXAxis():
 
     #create a list of months in digit form: 
     if currentMonth == 12:
-        monthListDigits	= ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        monthListDigits = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
+    
     elif currentMonth < 12:
         lastYrMonths = (12 - currentMonth)
 
         #create a list counting backwards from current month
         for i in range(currentMonth):
-            monthListDigits.insert(0, (currentMonth-i))
+            monthListDigits.insert(0, (currentMonth - i))
             
         #Adding months from last year: 
-        for j in range(12, (12- lastYrMonths), -1):
+        for j in range(12, (12 - lastYrMonths), -1):
             monthListDigits.insert(0, j)
         
         #Convert the list of digits into their month abbrev. forms
-        for k in range(12):
-            targetMonthText = datetime.date(1, int(monthListDigits[k]), 1).strftime('%b')
-            last12Months.append(str(targetMonthText))
+    for k in range(lastYrMonths):
+        targetMonthText = datetime.date(1, int(monthListDigits[k]), 1).strftime('%b')
+        last12Months.append(str(targetMonthText) + " " + str(lastYear))
+                
+    for m in range(currentMonth):
+        targetMonthText = datetime.date(currentYear, int(monthListDigits[lastYrMonths+m]), 1).strftime('%b')
+        last12Months.append(str(targetMonthText) + " " + str(currentYear))
             
-    print("Final month list to pass back for chart rendering: ", last12Months)
     return last12Months
 
 def fetch3mXAxis():
     last3Months = [] #final list of months to pass to Tommy's chart
-    monthListDigits = [] #temp buffer to create list of months. 
-    
+    monthListDigits = [] #temp buffer to create list of months.     
     
     if currentMonth < 3:
         lastYrMonths = (3 - currentMonth)
@@ -118,16 +119,16 @@ def fetch3mXAxis():
     for k in range(3):
         #code to change montListDigits to have the full correct date incl. year:
         #if month is Dec or Nov, it's from last year: 
-        if monthListDigits[k] <= 11: 
+        if monthListDigits[k] >= 11: 
             targetMonthText = datetime.date(1, int(monthListDigits[k]), 1).strftime('%b')
-            last3Months.append(str(targetMonthText) + str(lastYear))
+            last3Months.append(str(targetMonthText) + " 01, " + str(lastYear))
+            last3Months.append(str(targetMonthText) + " 15, " + str(lastYear))
+
         else: 
             targetMonthText = datetime.date(1, int(monthListDigits[k]), 1).strftime('%b')
-            last3Months.append(str(targetMonthText + "/" + currentYear + "/" + str(1)))
-            last3Months.append(str(targetMonthText + "/" + currentYear + "/" + str(15)))
+            last3Months.append(str(targetMonthText) + " 01, " + str(currentYear))
+            last3Months.append(str(targetMonthText) + " 15, " + str(currentYear))
             
-    
-    print("Final month list to pass back for chart rendering: ", last3Months)
     return last3Months
     
 #TODO: Function to average the dataset. Make it universal, so it can average no matter the size of the dataset. 
