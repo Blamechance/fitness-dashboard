@@ -11,8 +11,11 @@
 
 <h3> Bodyweight Tracking:</h3>
 
-<canvas id="tommy-bw-graph" style="max-width: 60%;"></canvas>
+<canvas id="tommyGraph" style="max-width: 60%;"></canvas>
 
+<button id="3m-button" type="button">3 Months</button>
+<button id="6m-button" type="button">6 Months</button>
+<button id="12m-button" type="button">12 Months</button>
 
 <script>
     //TODO: Create JS objects for: 
@@ -21,7 +24,7 @@
     //3. Tweak the new Chart code to include these two. 
     const chartData = {
         //Note that these labels currently state months by referring to the first day of the month (e.g 04/01/2023)
-        labels: JSON.parse('{{ x_axis | tojson }}'),
+        labels: {{ x_axis | tojson }},
         datasets: [{
             label: "Weight (kg)", 
             data: [
@@ -36,29 +39,36 @@
     }; 
 
     const chartOptions = {
-    scales: {
-        x: {
-        type: 'time'
+        scales: {
+            x: {
+            type: 'time'
+            }
         }
-    }
     };
 
     //Default graph dataset span will be 12 months:
-    //const xValues =  JSON.parse('{{ x_axis | tojson }}');
-    //const yValues = [50, 60, 70, 80, 90, 100]; 
-
-    new Chart("tommy-bw-graph", {
+    new Chart("tommyGraph", {
         type: "line",
         data: chartData,
         options: chartOptions
     });
+
+    //BUTTONS TO SWITCH BETWEEN 3-MONTH, 6-MONTH AND 12-MONTH VIEWS.
+    let Button3m = document.getElementById("3m-button"); 
+
+    Button3m.addEventListener("click", function() {
+        tommyGraph.data.labels = '{{ x_axis | tojson }}'; 
+        tommyGraph.update();     
+    }); 
+
 </script>
 
-{% endblock %}
 
-//Add an event listener button that can change the xValues that is passed in. 
-//3-months:
-//6 months: 
-//12-months: 
-//All-time: 
-//add logic to display varying labels/headings to show the time range. 
+
+<script>
+
+
+</script>
+
+
+{% endblock %}

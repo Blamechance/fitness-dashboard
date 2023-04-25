@@ -2,8 +2,9 @@ import os
 import datetime
 import calendar
 import sqlite3
+import json
 
-from flask import Flask, flash, redirect, render_template, request, session
+from flask import Flask, flash, redirect, render_template, request, session, jsonify
 from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -47,7 +48,7 @@ def checkin():
 @app.route('/tommy', methods=["GET", "POST"])
 def tommy():
     #12 months is default graph.     
-    x_axis = fetch6mXAxis()
+    x_axis = fetch3mXAxis()    
     
     #TODO: event listener functionality to return different datasets based on interaction. 
     
@@ -60,6 +61,7 @@ def nathan():
 @app.route('/raymond', methods=["GET", "POST"])
 def raymond():
     return render_template("raymond.html") 
+
 
 def fetch12mXAxis():
     last12Months = [] #final list of months to pass to Tommy's chart
@@ -138,7 +140,7 @@ def fetch6mXAxis():
             
     return last6Months
     
-
+@app.route("/fetch3mXAxis")
 def fetch3mXAxis():
     last3Months = [] #final list of months to pass to Tommy's chart
     monthListDigits = [] #temp buffer to create list of months.     
