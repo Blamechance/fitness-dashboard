@@ -24,9 +24,9 @@
     //3. Tweak the new Chart code to include these two. 
     const chartData = {
         //Note that these labels currently state months by referring to the first day of the month (e.g 04/01/2023)
-        labels: {{ x_axis | tojson }},
+        labels: JSON.parse('{{ x_axis_12 | tojson }}'),
         datasets: [{
-            label: "Weight (kg)", 
+            labels: "Weight (kg)", 
             data: [
                 //k,v pair
                 {x: '03-15-2023', y: 55},
@@ -47,7 +47,7 @@
     };
 
     //Default graph dataset span will be 12 months:
-    new Chart("tommyGraph", {
+    tommyGraph = new Chart("tommyGraph", {
         type: "line",
         data: chartData,
         options: chartOptions
@@ -56,10 +56,67 @@
     //BUTTONS TO SWITCH BETWEEN 3-MONTH, 6-MONTH AND 12-MONTH VIEWS.
     let Button3m = document.getElementById("3m-button"); 
 
+    //Define tommyGraph 
     Button3m.addEventListener("click", function() {
-        tommyGraph.data.labels = '{{ x_axis | tojson }}'; 
-        tommyGraph.update();     
-    }); 
+        tommyGraph.data = {
+            labels: JSON.parse('{{ x_axis_3 | tojson }}'),
+            datasets: [{
+                labels: "Weight (kg)", 
+                data: [
+                    //k,v pair
+                    {x: '03-15-2023', y: 55},
+                    //k,v pair
+                    {x: '2023-03-15', y: 60},
+                    //k,v pair
+                    {x: '2023-04-15', y: 57},
+                ]
+            }]
+        }
+        tommyGraph.update();
+});
+
+let Button12m = document.getElementById("12m-button"); 
+
+//Define tommyGraph 
+Button12m.addEventListener("click", function() {
+    tommyGraph.data = {
+        labels: JSON.parse('{{ x_axis_12 | tojson }}'),
+        datasets: [{
+            labels: "Weight (kg)", 
+            data: [
+                //k,v pair
+                {x: '03-15-2023', y: 55},
+                //k,v pair
+                {x: '2023-03-15', y: 60},
+                //k,v pair
+                {x: '2023-04-15', y: 57},
+            ]
+        }]
+    }
+    tommyGraph.update();
+});
+
+let Button6m = document.getElementById("6m-button"); 
+
+//Define tommyGraph 
+Button6m.addEventListener("click", function() {
+    tommyGraph.data = {
+        labels: JSON.parse('{{ x_axis_6 | tojson }}'),
+        datasets: [{
+            labels: "Weight (kg)", 
+            data: [
+                //k,v pair
+                {x: '03-15-2023', y: 55},
+                //k,v pair
+                {x: '2023-03-15', y: 60},
+                //k,v pair
+                {x: '2023-04-15', y: 57},
+            ]
+        }]
+    }
+    tommyGraph.update();
+});
+
 
 </script>
 

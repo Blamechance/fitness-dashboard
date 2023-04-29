@@ -48,11 +48,13 @@ def checkin():
 @app.route('/tommy', methods=["GET", "POST"])
 def tommy():
     #12 months is default graph.     
-    x_axis = fetch3mXAxis()    
+    x_axis_12 = fetch12mXAxis()
+    x_axis_3 = fetch3mXAxis()
+    x_axis_6 = fetch6mXAxis()
     
     #TODO: event listener functionality to return different datasets based on interaction. 
     
-    return render_template("tommy.html", x_axis = x_axis) 
+    return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6  ) 
         
 @app.route('/nathan', methods=["GET", "POST"])
 def nathan():
