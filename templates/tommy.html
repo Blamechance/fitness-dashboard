@@ -11,17 +11,16 @@
 
 <h3> Bodyweight Tracking:</h3>
 
-<canvas id="tommyGraph" style="max-width: 60%;"></canvas>
+<canvas id="tommyWeightGraph" style="max-width: 60%;"></canvas>
+<canvas id="tommySetsGraph" style="max-width: 60%;"></canvas>
+
 
 <button id="3m-button" type="button">3 Months</button>
 <button id="6m-button" type="button">6 Months</button>
 <button id="12m-button" type="button">12 Months</button>
 
 <script>
-    //TODO: Create JS objects for: 
-    //1. const chartData = { labels as passed by the fetch functions + datasets in dictionary format }
-    //2. const chartOptions = { configure options to be of type "time" + unit "month"  }
-    //3. Tweak the new Chart code to include these two. 
+    //Initial Render of  weight graph
     const chartData = {
         //Note that these labels currently state months by referring to the first day of the month (e.g 04/01/2023)
         labels: JSON.parse('{{ x_axis_12 | tojson }}'),
@@ -45,20 +44,22 @@
             }
         }
     };
+    
 
-    //Default graph dataset span will be 12 months:
-    tommyGraph = new Chart("tommyGraph", {
+    //Setting default render of weight graph to 12 months
+    //TODO: Add dynamic 12 month dataset. 
+    tommyWeightGraph = new Chart("tommyWeightGraph", {
         type: "line",
         data: chartData,
         options: chartOptions
     });
 
-    //BUTTONS TO SWITCH BETWEEN 3-MONTH, 6-MONTH AND 12-MONTH VIEWS.
+    //Button Functionality for 3-month chart. 
     let Button3m = document.getElementById("3m-button"); 
 
-    //Define tommyGraph 
+    //Initialise new chart axis and update on buttom prompt:
     Button3m.addEventListener("click", function() {
-        tommyGraph.data = {
+        tommyWeightGraph.data = {
             labels: JSON.parse('{{ x_axis_3 | tojson }}'),
             datasets: [{
                 label: "Weight (kg)", 
@@ -72,50 +73,52 @@
                 ]
             }]
         }
-        tommyGraph.update();
-});
+        tommyWeightGraph.update();
+    });
 
-let Button12m = document.getElementById("12m-button"); 
+    //Button Functionality for 12-month chart. 
+    let Button12m = document.getElementById("12m-button"); 
 
-//Define tommyGraph 
-Button12m.addEventListener("click", function() {
-    tommyGraph.data = {
-        labels: JSON.parse('{{ x_axis_12 | tojson }}'),
-        datasets: [{
-            label: "Weight (kg)", 
-            data: [
-                //k,v pair
-                {x: '03-15-2023', y: 55},
-                //k,v pair
-                {x: '2023-03-15', y: 60},
-                //k,v pair
-                {x: '2023-04-15', y: 57},
-            ]
-        }]
-    }
-    tommyGraph.update();
-});
+    //Initialise new chart axis and update on buttom prompt:
+    Button12m.addEventListener("click", function() {
+        tommyWeightGraph.data = {
+            labels: JSON.parse('{{ x_axis_12 | tojson }}'),
+            datasets: [{
+                label: "Weight (kg)", 
+                data: [
+                    //k,v pair
+                    {x: '03-15-2023', y: 55},
+                    //k,v pair
+                    {x: '2023-03-15', y: 60},
+                    //k,v pair
+                    {x: '2023-04-15', y: 57},
+                ]
+            }]
+        }
+        tommyWeightGraph.update();
+    });
 
-let Button6m = document.getElementById("6m-button"); 
+    //Button Functionality for 6-month chart. 
+    let Button6m = document.getElementById("6m-button"); 
 
-//Define tommyGraph 
-Button6m.addEventListener("click", function() {
-    tommyGraph.data = {
-        labels: JSON.parse('{{ x_axis_6 | tojson }}'),
-        datasets: [{
-            label: "Weight (kg)", 
-            data: [
-                //k,v pair
-                {x: '03-15-2023', y: 55},
-                //k,v pair
-                {x: '2023-03-15', y: 60},
-                //k,v pair
-                {x: '2023-04-15', y: 57},
-            ]
-        }]
-    }
-    tommyGraph.update();
-});
+    //Initialise new chart axis and update on buttom prompt:
+    Button6m.addEventListener("click", function() {
+        tommyWeightGraph.data = {
+            labels: JSON.parse('{{ x_axis_6 | tojson }}'),
+            datasets: [{
+                label: "Weight (kg)", 
+                data: [
+                    //k,v pair
+                    {x: '03-15-2023', y: 55},
+                    //k,v pair
+                    {x: '2023-03-15', y: 60},
+                    //k,v pair
+                    {x: '2023-04-15', y: 57},
+                ]
+            }]
+        }
+        tommyWeightGraph.update();
+    });
 
 
 </script>
