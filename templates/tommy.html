@@ -12,17 +12,15 @@
 <h3> Bodyweight Tracking:</h3>
 
 <canvas id="tommyWeightGraph" style="max-width: 60%;"></canvas>
-<canvas id="tommySetsGraph" style="max-width: 60%;"></canvas>
-
 
 <button id="3m-button" type="button">3 Months</button>
 <button id="6m-button" type="button">6 Months</button>
 <button id="12m-button" type="button">12 Months</button>
 
+<!-- Weight Graph -->
 <script>
-    //Initial Render of  weight graph
-    const chartData = {
-        //Note that these labels currently state months by referring to the first day of the month (e.g 04/01/2023)
+    //Configure default chart to be loaded on page render:
+    const weightChartData = {
         labels: JSON.parse('{{ x_axis_12 | tojson }}'),
         datasets: [{
             label: "Weight (kg)", 
@@ -37,23 +35,25 @@
         }]
     }; 
 
-    const chartOptions = {
+    const weightChartOptions = {
         scales: {
             x: {
             type: 'time'
             }
         }
     };
-    
 
     //Setting default render of weight graph to 12 months
     //TODO: Add dynamic 12 month dataset. 
     tommyWeightGraph = new Chart("tommyWeightGraph", {
         type: "line",
-        data: chartData,
-        options: chartOptions
+        data: weightChartData,
+        options: weightChartOptions
     });
 
+</script>
+
+<script>
     //Button Functionality for 3-month chart. 
     let Button3m = document.getElementById("3m-button"); 
 
@@ -119,15 +119,44 @@
         }
         tommyWeightGraph.update();
     });
-
-
 </script>
 
 
 
+<canvas id="tommySetsGraph" style="max-width: 60%;"></canvas>
+
+<!-- Muscle Group Sets Graph -->
 <script>
+    //Configure default graph
+    const setsChartData = {
+        labels: [
+            'Pink - Chest',
+            'Blue - Shoulders',
+            'Yellow - Back',
+            'Green - Legs',
+            'Purple - Biceps',
+            'Red - Triceps'
+        ],
+        datasets: [{
+            label: 'Total Muscle Groups',
+            data: [12, 16, 25, 20, 8, 8],
+            backgroundColor: [
+            'rgb(248, 131, 121)',
+            'rgb(54, 162, 235)',
+            'rgb(255, 205, 86)',
+            'rgb(80,200,120)',
+            'rgb(127, 0, 255)',
+            'rgb(255,36,0)'
+            ],
+            hoverOffset: 4
+        }]
+    };
 
-
+    //Initialise default graph: 
+    tommySetsGraph = new Chart("tommySetsGraph", {
+        type: "doughnut",
+        data: setsChartData
+    });
 </script>
 
 
