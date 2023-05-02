@@ -31,16 +31,15 @@
                 {x: '2023-03-15', y: 60},
                 //k,v pair
                 {x: '2023-04-15', y: 57},
-            ]
+            ],
+            borderColor: 'rgb(126,8,10)',
+            tension: 0.1,
+            fill: true
         }]
     }; 
 
     const weightChartOptions = {
-        scales: {
-            x: {
-            type: 'time'
-            }
-        }
+        //for future use: 
     };
 
     //Setting default render of weight graph to 12 months
@@ -122,8 +121,19 @@
 </script>
 
 
+<h3> Muscle Group/Sets Volume Analysis:</h3>
 
-<canvas id="tommySetsGraph" style="max-width: 60%;"></canvas>
+<canvas id="tommyVolGraph" style="max-width: 60%;"></canvas>
+
+<form action="">
+    <!-- There is no current error checking for setting earliest date out of bounds -->
+    <label for="earliestDate">Enter the first date of period for analysis:</label>
+    <input type="date" id="earliestDate" name="earliestDate" min="2022-00-01"><br><br>
+  
+    <label for="latestDate">Enter the last date of period for analysis:</label>
+    <input type="date" id="latestDate" name="latestDate" max="currentDate"><br><br>
+    <input type="submit" id="mg-analyse-button" value="Analyse">
+</form>
 
 <!-- Muscle Group Sets Graph -->
 <script>
@@ -153,10 +163,23 @@
     };
 
     //Initialise default graph: 
-    tommySetsGraph = new Chart("tommySetsGraph", {
+    tommyVolGraph = new Chart("tommyVolGraph", {
         type: "doughnut",
         data: setsChartData
     });
+</script>
+
+<script>
+    //Functionality to update Muscle Group Analysis graph: 
+    let mgAnalyseButton = document.getElementById("mg-analyse-button"); 
+
+    //On button click, pass the dates back to app.py for processing. Use the returned values to update graph. 
+    mgAnalyseButton.addEventListener("click", function() {
+        event.preventDefault(); // Prevents form from submitting and reloading the page
+        tommyVolGraph.data.datasets[0].data = [10, 10, 10, 10, 10, 10]; //this is code to index into the first dataset of the graph, and update it's values. 
+        tommyVolGraph.update();
+    });
+
 </script>
 
 
