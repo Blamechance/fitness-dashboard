@@ -24,17 +24,10 @@
         labels: JSON.parse('{{ x_axis_12 | tojson }}'),
         datasets: [{
             label: "Weight (kg)", 
-            data: [
-                //k,v pair
-                {x: '03-15-2023', y: 55},
-                //k,v pair
-                {x: '2023-03-15', y: 60},
-                //k,v pair
-                {x: '2023-04-15', y: 57},
-            ],
-            borderColor: 'rgb(126,8,10)',
+            data: [55, 58, 60, 63, 60, 65, 70, 72, 65, 80, 78, 75],
+            borderColor: 'rgb(242,133,0)',
             tension: 0.1,
-            fill: true
+            fill: false
         }]
     }; 
 
@@ -62,15 +55,11 @@
             labels: JSON.parse('{{ x_axis_3 | tojson }}'),
             datasets: [{
                 label: "Weight (kg)", 
-                data: [
-                    //k,v pair
-                    {x: '03-15-2023', y: 55},
-                    //k,v pair
-                    {x: '2023-03-15', y: 60},
-                    //k,v pair
-                    {x: '2023-04-15', y: 57},
-                ]
-            }]
+                data: [72, 79, 75, 77, 62, 65] ,
+                borderColor: 'rgb(242,133,0)',
+                tension: 0.1,
+                fill: false
+            }]  
         }
         tommyWeightGraph.update();
     });
@@ -84,14 +73,10 @@
             labels: JSON.parse('{{ x_axis_12 | tojson }}'),
             datasets: [{
                 label: "Weight (kg)", 
-                data: [
-                    //k,v pair
-                    {x: '03-15-2023', y: 55},
-                    //k,v pair
-                    {x: '2023-03-15', y: 60},
-                    //k,v pair
-                    {x: '2023-04-15', y: 57},
-                ]
+                data: [55, 58, 60, 63, 60, 65, 70, 72, 65, 80, 78, 75],
+                borderColor: 'rgb(242,133,0)',
+                tension: 0.1,
+                fill: false
             }]
         }
         tommyWeightGraph.update();
@@ -106,14 +91,10 @@
             labels: JSON.parse('{{ x_axis_6 | tojson }}'),
             datasets: [{
                 label: "Weight (kg)", 
-                data: [
-                    //k,v pair
-                    {x: '03-15-2023', y: 55},
-                    //k,v pair
-                    {x: '2023-03-15', y: 60},
-                    //k,v pair
-                    {x: '2023-04-15', y: 57},
-                ]
+                data: [72, 79, 75, 77, 62, 65, 72, 79, 75, 77, 62, 65],
+                borderColor: 'rgb(242,133,0)',
+                tension: 0.1,
+                fill: false
             }]
         }
         tommyWeightGraph.update();
