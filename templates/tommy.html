@@ -120,9 +120,10 @@
         
         dl.id = "fortnight-cycle";
         for (; i < len; i+=1) {
-            var option = document.createElement("fortnight-option");
+            var option = document.createElement("option");
             option.value = trainingCycles[i]; 
             dl.appendChild(option); 
+            console.log(option)
         }
         container.appendChild(dl)
     }

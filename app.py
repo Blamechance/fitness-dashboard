@@ -47,14 +47,23 @@ def checkin():
 #Athelete pages - maybe they can share a single function to call? 
 @app.route('/tommy', methods=["GET", "POST"])
 def tommy():
-    #12 months is default graph.     
+    #Weight Line Graph:   
     x_axis_12 = fetch12mXAxis()
     x_axis_3 = fetch3mXAxis()
     x_axis_6 = fetch6mXAxis()
     
-    #TODO: event listener functionality to return different datasets based on interaction. 
+    if request.method == "POST": 
+        #Muscle Group Pie Graph:
+        start_date = request.form["start-date"]
+        last_date = request.form["last-date"]
+            
+        print(start_date)
+        print(last_date)    
+        
+    else: 
+        return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
     
-    return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6  ) 
+    return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
         
 @app.route('/nathan', methods=["GET", "POST"])
 def nathan():
@@ -63,7 +72,7 @@ def nathan():
 @app.route('/raymond', methods=["GET", "POST"])
 def raymond():
     return render_template("raymond.html") 
-
+    
 
 def fetch12mXAxis():
     last12Months = [] #final list of months to pass to Tommy's chart
@@ -142,7 +151,6 @@ def fetch6mXAxis():
             
     return last6Months
     
-@app.route("/fetch3mXAxis")
 def fetch3mXAxis():
     last3Months = [] #final list of months to pass to Tommy's chart
     monthListDigits = [] #temp buffer to create list of months.     
