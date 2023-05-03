@@ -106,15 +106,30 @@
 
 <canvas id="tommyVolGraph" style="max-width: 60%;"></canvas>
 
-<form action="">
-    <!-- There is no current error checking for setting earliest date out of bounds -->
-    <label for="earliestDate">Enter the first date of period for analysis:</label>
-    <input type="date" id="earliestDate" name="earliestDate" min="2022-00-01"><br><br>
-  
-    <label for="latestDate">Enter the last date of period for analysis:</label>
-    <input type="date" id="latestDate" name="latestDate" max="currentDate"><br><br>
-    <input type="submit" id="mg-analyse-button" value="Analyse">
-</form>
+<input id="vol-analysis-period" list="fortnight-cycle"/>
+<input type="submit" id="vol-analyse-button" value="Analyse">
+
+<script>
+    var trainingCycles = ["Option A", "Option B", "Option C"]; //This will be a list of dates, representing the week of which to analyse -- maybe as a dictionary? 
+
+    function populateDatalist() {
+        var container = document.getElementById("vol-analysis-period"),
+        i = 0,
+        len = trainingCycles.length,
+        dl = document.createElement("datalist");
+        
+        dl.id = "fortnight-cycle";
+        for (; i < len; i+=1) {
+            var option = document.createElement("fortnight-option");
+            option.value = trainingCycles[i]; 
+            dl.appendChild(option); 
+        }
+        container.appendChild(dl)
+    }
+    populateDatalist();
+
+</script>
+
 
 <!-- Muscle Group Sets Graph -->
 <script>
@@ -152,11 +167,13 @@
 
 <script>
     //Functionality to update Muscle Group Analysis graph: 
-    let mgAnalyseButton = document.getElementById("mg-analyse-button"); 
+    let volAnalyseButton = document.getElementById("vol-analyse-button"); 
 
     //On button click, pass the dates back to app.py for processing. Use the returned values to update graph. 
-    mgAnalyseButton.addEventListener("click", function() {
+    volAnalyseButton.addEventListener("click", function() {
         event.preventDefault(); // Prevents form from submitting and reloading the page
+
+        //Change values and update graph:
         tommyVolGraph.data.datasets[0].data = [10, 10, 10, 10, 10, 10]; //this is code to index into the first dataset of the graph, and update it's values. 
         tommyVolGraph.update();
     });
