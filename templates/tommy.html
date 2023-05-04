@@ -106,8 +106,10 @@
 
 <canvas id="tommyVolGraph" style="max-width: 60%;"></canvas>
 
-<input id="vol-analysis-period" list="fortnight-cycle"/>
-<input type="submit" id="vol-analyse-button" value="Analyse">
+<form id="vol-form" action="volume_analysis" method="POST">
+    <input id="vol-analysis-period" list="fortnight-cycle"/>
+    <input type="submit" id="vol-analyse-button" value="Analyse" method="POST">
+</form>
 
 <script>
     var trainingCycles = ["Option A", "Option B", "Option C"]; //This will be a list of dates, representing the week of which to analyse -- maybe as a dictionary? 
@@ -123,12 +125,10 @@
             var option = document.createElement("option");
             option.value = trainingCycles[i]; 
             dl.appendChild(option); 
-            console.log(option)
         }
         container.appendChild(dl)
     }
-    populateDatalist();
-
+    populateDatalist();   
 </script>
 
 
@@ -168,17 +168,36 @@
 
 <script>
     //Functionality to update Muscle Group Analysis graph: 
-    let volAnalyseButton = document.getElementById("vol-analyse-button"); 
+    let volForm = document.getElementById("vol-form"); 
 
     //On button click, pass the dates back to app.py for processing. Use the returned values to update graph. 
-    volAnalyseButton.addEventListener("click", function() {
+    volForm.addEventListener("click", function() {
         event.preventDefault(); // Prevents form from submitting and reloading the page
+        
+        //Send the chosen option from data list to server:
+        selectedCycle = volForm.value; 
+
+        //make request to server:
+        fetch("/volume_analysis", {
+            method:"POST",
+            body: JSON.stringify({ option: selectedCycle}) //turn the data into a JSON string and attach it to the request
+        })
+        //handle the promise response received -- pass on JSON promise to next block
+        .then(response =>response.json())
+        .then( data => {
+            //update the pie graph with new data
+            tommyVolGraph.data=  [2, 4, 2, 4, 2, 2, 4];
+            tommyVolGraph.update(); 
+        })
+        //catch any errors:
+        .catch(error => console.error(error));
 
         //Change values and update graph:
-        tommyVolGraph.data.datasets[0].data = [10, 10, 10, 10, 10, 10]; //this is code to index into the first dataset of the graph, and update it's values. 
-        tommyVolGraph.update();
+        //tommyVolGraph.data.datasets[0].data = [10, 10, 10, 10, 10, 10]; //this is code to index into the first dataset of the graph, and update it's values. 
+        
+        //pass the chosen training fortnight option back to server: 
+        //tommyVo
     });
-
 </script>
 
 

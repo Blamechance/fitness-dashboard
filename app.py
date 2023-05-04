@@ -47,24 +47,23 @@ def checkin():
 #Athelete pages - maybe they can share a single function to call? 
 @app.route('/tommy', methods=["GET", "POST"])
 def tommy():
-    #Weight Line Graph:   
+    #Prepare items to pass to Weight Line Graph:   
     x_axis_12 = fetch12mXAxis()
     x_axis_3 = fetch3mXAxis()
     x_axis_6 = fetch6mXAxis()
     
-    if request.method == "POST": 
+    if request.method == "POST": #POST method indicates user was redirected to function by another. 
         #Muscle Group Pie Graph:
-        start_date = request.form["start-date"]
-        last_date = request.form["last-date"]
-            
-        print(start_date)
-        print(last_date)    
+        #call volume analysis function -- currently just prints the option:
+        print("Entering POST method: ")
         
-    else: 
         return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
-    
-    return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
+
+         
         
+    else: #GET method indicates user put address to route to the function.  
+        return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
+            
 @app.route('/nathan', methods=["GET", "POST"])
 def nathan():
     return render_template("nathan.html") 
@@ -189,6 +188,11 @@ def fetch3mXAxis():
             last3Months.append(str(targetMonthText) + " 15, " + str(currentYear))
             
     return last3Months
-    
-#TODO: Function to average the dataset. Make it universal, so it can average no matter the size of the dataset. 
-#default format to pass to chart.js is: 'MM/DD/YYYY'
+
+#@app.route('/volume_analysis', methods=["POST"])
+def volume_analysis():
+    print("Entered volume_analysis.")
+    target_period = request.form["vol-analysis-period"]
+    print(target_period)
+
+    return
