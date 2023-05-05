@@ -107,8 +107,12 @@
 <canvas id="tommyVolGraph" style="max-width: 60%;"></canvas>
 
 <form id="vol-form" action="volume_analysis" method="POST">
+    <label for ="vol-analysis-period">Select Target Training Period to Analyse:</label><br>
     <input id="vol-analysis-period" list="fortnight-cycle"/>
-    <input type="submit" id="vol-analyse-button" value="Analyse" method="POST">
+
+    <button class="btn btn-primary" id="volForm-btn" type="submit">Analyse</button>
+
+    <!-- <input type="button" id="vol-analyse-button" value="Analyse" method="POST"> -->
 </form>
 
 <script>
@@ -168,7 +172,7 @@
 
 <script>
     //Functionality to update Muscle Group Analysis graph: 
-    let volForm = document.getElementById("vol-form"); 
+    let volForm = document.getElementById("volForm-btn"); 
 
     //On button click, pass the dates back to app.py for processing. Use the returned values to update graph. 
     volForm.addEventListener("click", function() {

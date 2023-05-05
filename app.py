@@ -55,9 +55,14 @@ def tommy():
     if request.method == "POST": #POST method indicates user was redirected to function by another. 
         #Muscle Group Pie Graph:
         #call volume analysis function -- currently just prints the option:
-        print("Entering POST method: ")
+        print("Entering POST method for tommy(): ")
+        target_period = volume_analysis()
+        print(target_period)
         
-        return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
+        
+        
+        
+        return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6, target_period = target_period) 
 
          
         
@@ -126,9 +131,7 @@ def fetch6mXAxis():
         #Adding months from last year:
         for j in range(12, (12 - lastYrMonths), -1):
             monthListDigits.insert(0, j)
-        
-    print(monthListDigits)
-    
+            
     #Convert the list of digits into their month abbrev. forms
     #prev months first: 
     for k in range(lastYrMonths):
@@ -189,10 +192,10 @@ def fetch3mXAxis():
             
     return last3Months
 
-#@app.route('/volume_analysis', methods=["POST"])
+@app.route('/volume_analysis', methods=["POST"])
 def volume_analysis():
     print("Entered volume_analysis.")
-    target_period = request.form["vol-analysis-period"]
-    print(target_period)
+    target_period = request.form.get("vol-form") #request.form didn't work, but request.form.get does? 
+    print("volume_analysis print of target_period: ", target_period)
 
-    return
+    return jsonify({"Training-Period": target_period})
