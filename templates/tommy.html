@@ -106,19 +106,22 @@
 
 <canvas id="tommyVolGraph" style="max-width: 60%;"></canvas>
 
-<form id="vol-form" action="volume_analysis" method="POST">
+<form id="vol-form" name="vol-form-box" method="post">
     <label for ="vol-analysis-period">Select Target Training Period to Analyse:</label><br>
-    <select id="vol-period-selection" name="vol-analysis-period">
-        <option value="temp-option-for-eventlistener" >Temp. option to satisify event listener</option>
-    
-    <button class="btn btn-primary" id="volForm-btn" type="submit">Analyse</button> <!-- Dictate reaction with function-->
-
-    <!-- <input type="submit" value="Analyse"/> -->
+    <select id="vol-period-selection" name="vol-analysis-period">    
+    <input type="submit" id="volume-submit-btn" name="vol-input" value="Analyse"/>
 </form>
+
+<!-- <button class="btn btn-primary" id="volForm-btn" type="submit">Analyse</button> <!-- manual analyse button / alternative for form submit-->
+
 
 <script>
     console.log("Pushing volume graph options...")
-    var trainingCycles = ["Option A", "Option B", "Option C"]; //This will be a list of dates, representing the week of which to analyse -- maybe as a dictionary? 
+    var trainingCycles = {
+        "01-01-2023": [1,1,1,1,1,1],
+        "02-02-2023": [2,2,2,2,2,2],
+        "03-03-2023": [3,3,3,3,3,3]
+    }; //This will be a list of dates, representing the week of which to analyse -- maybe as a dictionary? 
 
     var list = document.getElementById("vol-period-selection"); 
     for(var i in trainingCycles) {
@@ -164,28 +167,28 @@
 
 <script>
     //Functionality to update Muscle Group Analysis graph: 
-    let volForm = document.getElementById("vol-form"); 
-    let userPeriod = document.getElementById("vol-period-selection");
+    let volForm = document.getElementById("volume-submit-btn"); 
+    let userPeriod = document.getElementById("vol-period-selection").value;
 
-    //On button click, pass the dates back to app.py for processing. Use the returned values to update graph. 
+    //On selecting a period, pass the dates back to app.py for processing. Use the returned values to update graph. 
     volForm.addEventListener("click", function() {
         event.preventDefault(); // Prevents form from submitting and reloading the page
-        console.log(userPeriod.value) 
+        console.log("Client side userPeriod = " + userPeriod); 
 
-        //Extract the period user has specified from form: 
-        selectedCycle = userPeriod.value; 
-
-        //make request to server:
+        //make request to server -- h:
         $.ajax({
             type: "POST", 
             url: "/volume_analysis",
-            //dataType: "String",
-            //data: {training_period: selectedCycle}
+            data: JSON.stringify(userPeriod),
+            success: function(data) {
+                var volResult = data;
+                console.log("Data received : " + data)
+            },
+            error: function() {
+                alert("Volume Analysis Error: Failed to receive target period's data from server. ")
+            }
         })
 
-        //Change values and update graph:
-        //tommyVolGraph.data.datasets[0].data = [10, 10, 10, 10, 10, 10]; //this is code to index into the first dataset of the graph, and update it's values. 
-        
     });
 </script>
 

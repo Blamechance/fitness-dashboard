@@ -56,13 +56,8 @@ def tommy():
         #Muscle Group Pie Graph:
         #call volume analysis function -- currently just prints the option:
         print("Entering POST method for tommy(): ")
-        target_period = volume_analysis()
-        print(target_period)
-        
-        
-        
-        
-        return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6, target_period = target_period) 
+
+        return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
 
          
         
@@ -195,7 +190,7 @@ def fetch3mXAxis():
 @app.route('/volume_analysis', methods=["POST"])
 def volume_analysis():
     print("Entered volume_analysis.")
-    target_period = request.values.get('vol-analysis-period') #this is not fetching the option properly.... 
+    target_period = request.get_json("userPeriod") #this is not fetching the option properly.... 
     print("volume_analysis print of target_period: ", target_period)
-
-    return jsonify({"Training-Period": target_period})
+    
+    return target_period
