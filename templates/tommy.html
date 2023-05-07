@@ -106,7 +106,7 @@
 
 <canvas id="tommyVolGraph" style="max-width: 60%;"></canvas>
 
-<form id="vol-form" name="vol-form-box" method="post">
+<form id="vol-form" name="vol-form-box" method="post" onsubmit="fetchVolumeAnalysis()">
     <label for ="vol-analysis-period">Select Target Training Period to Analyse:</label><br>
     <select id="vol-period-selection" name="vol-analysis-period">    
     <input type="submit" id="volume-submit-btn" name="vol-input" value="Analyse"/>
@@ -167,11 +167,13 @@
 
 <script>
     //Functionality to update Muscle Group Analysis graph: 
-    let volForm = document.getElementById("volume-submit-btn"); 
-    let userPeriod = document.getElementById("vol-period-selection").value;
 
     //On selecting a period, pass the dates back to app.py for processing. Use the returned values to update graph. 
-    volForm.addEventListener("click", function() {
+    function fetchVolumeAnalysis() {
+
+        let volForm = document.getElementById("volume-submit-btn"); 
+        let userPeriod = document.getElementById("vol-period-selection").value;
+
         event.preventDefault(); // Prevents form from submitting and reloading the page
         console.log("Client side userPeriod = " + userPeriod); 
 
@@ -189,7 +191,7 @@
             }
         })
 
-    });
+    };
 </script>
 
 

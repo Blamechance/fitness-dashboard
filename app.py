@@ -193,4 +193,4 @@ def volume_analysis():
     target_period = request.get_json("userPeriod") #this is not fetching the option properly.... 
     print("volume_analysis print of target_period: ", target_period)
     
-    return target_period
+    return jsonify(target_period)
