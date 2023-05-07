@@ -195,7 +195,7 @@ def fetch3mXAxis():
 @app.route('/volume_analysis', methods=["POST"])
 def volume_analysis():
     print("Entered volume_analysis.")
-    target_period = request.form.get("vol-form") #request.form didn't work, but request.form.get does? 
+    target_period = request.values.get('vol-analysis-period') #this is not fetching the option properly.... 
     print("volume_analysis print of target_period: ", target_period)
 
     return jsonify({"Training-Period": target_period})

@@ -108,31 +108,23 @@
 
 <form id="vol-form" action="volume_analysis" method="POST">
     <label for ="vol-analysis-period">Select Target Training Period to Analyse:</label><br>
-    <input id="vol-analysis-period" list="fortnight-cycle"/>
+    <select id="vol-period-selection" name="vol-analysis-period">
+        <option value="temp-option-for-eventlistener" >Temp. option to satisify event listener</option>
+    
+    <button class="btn btn-primary" id="volForm-btn" type="submit">Analyse</button> <!-- Dictate reaction with function-->
 
-    <button class="btn btn-primary" id="volForm-btn" type="submit">Analyse</button>
-
-    <!-- <input type="button" id="vol-analyse-button" value="Analyse" method="POST"> -->
+    <!-- <input type="submit" value="Analyse"/> -->
 </form>
 
 <script>
+    console.log("Pushing volume graph options...")
     var trainingCycles = ["Option A", "Option B", "Option C"]; //This will be a list of dates, representing the week of which to analyse -- maybe as a dictionary? 
 
-    function populateDatalist() {
-        var container = document.getElementById("vol-analysis-period"),
-        i = 0,
-        len = trainingCycles.length,
-        dl = document.createElement("datalist");
-        
-        dl.id = "fortnight-cycle";
-        for (; i < len; i+=1) {
-            var option = document.createElement("option");
-            option.value = trainingCycles[i]; 
-            dl.appendChild(option); 
-        }
-        container.appendChild(dl)
+    var list = document.getElementById("vol-period-selection"); 
+    for(var i in trainingCycles) {
+        list.add(new Option(trainingCycles[i])); 
     }
-    populateDatalist();   
+
 </script>
 
 
@@ -172,35 +164,28 @@
 
 <script>
     //Functionality to update Muscle Group Analysis graph: 
-    let volForm = document.getElementById("volForm-btn"); 
+    let volForm = document.getElementById("vol-form"); 
+    let userPeriod = document.getElementById("vol-period-selection");
 
     //On button click, pass the dates back to app.py for processing. Use the returned values to update graph. 
     volForm.addEventListener("click", function() {
         event.preventDefault(); // Prevents form from submitting and reloading the page
-        
-        //Send the chosen option from data list to server:
-        selectedCycle = volForm.value; 
+        console.log(userPeriod.value) 
+
+        //Extract the period user has specified from form: 
+        selectedCycle = userPeriod.value; 
 
         //make request to server:
-        fetch("/volume_analysis", {
-            method:"POST",
-            body: JSON.stringify({ option: selectedCycle}) //turn the data into a JSON string and attach it to the request
+        $.ajax({
+            type: "POST", 
+            url: "/volume_analysis",
+            //dataType: "String",
+            //data: {training_period: selectedCycle}
         })
-        //handle the promise response received -- pass on JSON promise to next block
-        .then(response =>response.json())
-        .then( data => {
-            //update the pie graph with new data
-            tommyVolGraph.data=  [2, 4, 2, 4, 2, 2, 4];
-            tommyVolGraph.update(); 
-        })
-        //catch any errors:
-        .catch(error => console.error(error));
 
         //Change values and update graph:
         //tommyVolGraph.data.datasets[0].data = [10, 10, 10, 10, 10, 10]; //this is code to index into the first dataset of the graph, and update it's values. 
         
-        //pass the chosen training fortnight option back to server: 
-        //tommyVo
     });
 </script>
 
