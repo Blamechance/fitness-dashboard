@@ -118,9 +118,9 @@
 <script>
     console.log("Pushing volume graph options...")
     var trainingCycles = {
-        "01-01-2023": [1,1,1,1,1,1],
-        "02-02-2023": [2,2,2,2,2,2],
-        "03-03-2023": [3,3,3,3,3,3]
+        "01-01-2023": [1, 1, 1, 1, 1, 1],
+        "02-02-2023": [2, 2, 2, 2, 2, 2],
+        "03-03-2023": [3, 3, 3, 3, 3, 3]
     }; //This will be a list of dates, representing the week of which to analyse -- maybe as a dictionary? 
 
     var list = document.getElementById("vol-period-selection"); 
@@ -185,12 +185,15 @@
             success: function(data) {
                 var volResult = data;
                 console.log("Data received : " + data)
+
+                //Code to update graph with new values: 
+                tommyVolGraph.data.datasets[0].data = volResult.split(",");
+                tommyVolGraph.update();
             },
             error: function() {
                 alert("Volume Analysis Error: Failed to receive target period's data from server. ")
             }
         })
-
     };
 </script>
 

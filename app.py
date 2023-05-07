@@ -56,11 +56,8 @@ def tommy():
         #Muscle Group Pie Graph:
         #call volume analysis function -- currently just prints the option:
         print("Entering POST method for tommy(): ")
-
         return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
 
-         
-        
     else: #GET method indicates user put address to route to the function.  
         return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
             
