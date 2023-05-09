@@ -189,5 +189,12 @@ def volume_analysis():
     print("Entered volume_analysis.")
     target_period = request.get_json("userPeriod") #this is not fetching the option properly.... 
     print("volume_analysis print of target_period: ", target_period)
-    
     return jsonify(target_period)
+
+@app.route('/validate_csv_format', methods=["POST"])
+def validate_csv_format():
+    print("Entered validate_csv_format. ")
+    return True
+
+def process_csv():
+    return "Entered process_csv."

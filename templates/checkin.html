@@ -7,6 +7,43 @@
 {% block main %}
 
 <h1> Progress Check-in </h1>
-<p>Hello, World.</p>
+<p>Upload your fitnotes export files to check-in!</p>
+
+
+<!-- onsubmit for form should be to a function to validate CSV format. -->
+<!-- action="" should be funciton to take in and process the CSV data. -->
+<!-- Both should be done asynchronously for better user exp. use pop-up alerts for confirmations -->
+<form method="post" onsubmit="validateCSV()" action="">
+    <select id="userDataType" name="uploadType">
+        <option value="Training">Training Log</option>
+        <option value="Weight">Body Tracking Log</option>
+    <input type="file" id="userFile" name="userTrainingData">
+    <input type="submit">
+</form>
+
+<!-- Send data to server -->
+<script>
+    function validateCSV() {
+        event.preventDefault(); // Prevents form from submitting and reloading the page
+
+        $.ajax({
+            type:"POST",
+            url:"/validate_csv_format",
+            //data:  , this should include the data from CSV,
+            success: function(data) {
+                alert("Submitted file is valid!")
+                console.log("validateCSV returned TRUE")
+            },
+            error: function() {
+                alert("Submitted file is not valid! ")
+            }
+        })
+    }; 
+    //Pass the file to validate_csv_format. If false returned, notify user. 
+
+    //If valid, pass file to "process_csv"
+
+
+</script>
 
 {% endblock %}

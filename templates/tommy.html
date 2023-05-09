@@ -170,14 +170,13 @@
 
     //On selecting a period, pass the dates back to app.py for processing. Use the returned values to update graph. 
     function fetchVolumeAnalysis() {
-
         let volForm = document.getElementById("volume-submit-btn"); 
         let userPeriod = document.getElementById("vol-period-selection").value;
 
         event.preventDefault(); // Prevents form from submitting and reloading the page
         console.log("Client side userPeriod = " + userPeriod); 
 
-        //make request to server -- h:
+        //Send the selected period to the server. Use data returned to update graph.
         $.ajax({
             type: "POST", 
             url: "/volume_analysis",
