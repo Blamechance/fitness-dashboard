@@ -194,7 +194,14 @@ def volume_analysis():
 @app.route('/validate_csv_format', methods=["POST"])
 def validate_csv_format():
     print("Entered validate_csv_format. ")
-    return True
+    #python/dictionary -> JS/JSON
+    dummyData = {
+        "log":"Training Log",
+        "Excercise":"Flat Barbell Bench",
+         "Sets": 4,
+         "reps": 8        
+    } 
+    return json.dumps(dummyData) #JSON format 
 
 def process_csv():
     return "Entered process_csv."
