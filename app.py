@@ -194,6 +194,21 @@ def volume_analysis():
 @app.route('/validate_csv_format', methods=["POST"])
 def validate_csv_format():
     print("Entered validate_csv_format. ")
+    
+    submission_type = request.get_json("userFileType")
+    print(submission_type)
+    
+    #just in case - check that user chose a file type: 
+    if submission_type == None:
+        print("Error: Form submission type not selected.")
+        return
+    
+    if submission_type == "training":
+        print("Detected Training file")
+    
+    if submission_type == "weight":
+        print("Detected Weight file")
+    
     #python/dictionary -> JS/JSON
     dummyData = {
         "log":"Training Log",
