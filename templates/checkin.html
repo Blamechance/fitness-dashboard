@@ -11,12 +11,12 @@
 
 
 <!-- use onsubmit for validation, to prevent needing an asynchronous call -->
-<form method="post" onsubmit="validateCSV()">
+<form method="post" onsubmit="validateCSV()" action="/upload" enctype = "multipart/form-data">
     <select id="userDataType" name="uploadType">
         <option value="none" selected disabled hidden>Select an Option</option>
         <option value="training">Training Log</option>
         <option value="weight">Body Tracking Log</option>
-    <input type="file" id="userFile" name="userTrainingData">
+    <input type="file" id="userFile" name="userUpload">
     <input type="submit">
 </form>
 
@@ -24,11 +24,31 @@
 <script>
     //Need to change AJAX syntax format for best practice:
     function validateCSV() {
+        event.preventDefault(); // Prevents form from submitting and reloading the page
+
         //Take user's option to indicate which export file they are uploading - either "Training" or "Weight"
         let userFileType = document.getElementById("userDataType").value; 
+        let userFile = document.getElementById("userFile"); 
+
+        console.log(userFile.files)
+
+
+        // Check if user attached a file to form: 
+        if (userFile.files.length == 0){ //cannot compare against "true" as .files returns a JSON object (list-like)
+            console.log("File was not valid. Aborting form submission."); 
+            alert("File was not valid. \nPlease check that a file was chosen.")
+            return false;
+        } 
+
+        // Check if user selected a file type: 
+        if (userFileType == null || userFileType == "none"){
+            console.log("File was not valid. Aborting form submission."); 
+            alert("File was not valid. \nPlease check an option was selected.")
+            return false;
+        };
+
         console.log(JSON.stringify(userFileType)); 
 
-        event.preventDefault(); // Prevents form from submitting and reloading the page
 
         $.ajax({
             type:"POST",
@@ -37,17 +57,14 @@
             success: function(data) {
                 alert("Submitted file is valid!")
                 console.log(data)
+                return true;
             },
             error: function() {
                 alert("Submitted file is not valid! ")
+                return false;
             }
         })
     }; 
-    //Pass the file to validate_csv_format. If false returned, notify user. 
-
-    //If valid, pass file to "process_csv"
-
-
 </script>
 
 {% endblock %}

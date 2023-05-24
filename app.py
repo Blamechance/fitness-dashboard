@@ -9,6 +9,7 @@ from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.security import check_password_hash, generate_password_hash
 
+
 # Configure application - this lets flask know to use the "app.py" file
 app = Flask(__name__)
 
@@ -18,6 +19,14 @@ if __name__ == "__main__":
 # Disable caching + enable debug/auto reload of page:
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 app.config["TEMPLATES_AUTO_RELOAD"] = True
+
+# Define path to upload folders
+app.config['weight_log_folder'] = '/files/weight_logs'
+app.config['training_log_folder'] = '/files/training_logs'
+
+app.config['MAX_CONTENT_PATH'] = 50000 #sample files average 20KB. 
+
+
 
 #current time/date: 
 currentTimeDate = datetime.datetime.now()
@@ -191,6 +200,13 @@ def volume_analysis():
     print("volume_analysis print of target_period: ", target_period)
     return jsonify(target_period)
 
+@app.route('/upload', methods=['POST'])
+def upload():
+    print("Entered upload function. ") 
+    #file = request.files[]
+    return render_template("upload-success.html") #have return statement to a "success" page. 
+    
+
 @app.route('/validate_csv_format', methods=["POST"])
 def validate_csv_format():
     print("Entered validate_csv_format. ")
@@ -198,14 +214,15 @@ def validate_csv_format():
     submission_type = request.get_json("userFileType")
     print(submission_type)
     
-    #just in case - check that user chose a file type: 
-    if submission_type == None:
+    if submission_type is None : # null check -- using string literal as JSON "none" was received
         print("Error: Form submission type not selected.")
-        return
+        return False
     
     if submission_type == "training":
         print("Detected Training file")
+        
     
+    # Detect weight file and call processing function
     if submission_type == "weight":
         print("Detected Weight file")
     
@@ -218,5 +235,13 @@ def validate_csv_format():
     } 
     return json.dumps(dummyData) #JSON format 
 
-def process_csv():
+
+
+def process_weight_log():
+    """
+        This function takes in the submitted weight excel sheet, processes and formats it to {"date":"weight"} JSON list. 
+        This data will then be checked against the SQL database - any data points that do not exist as entries in the DB will be created.        
+    """
+    
+    
     return "Entered process_csv."
