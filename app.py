@@ -199,52 +199,90 @@ def volume_analysis():
     target_period = request.get_json("userPeriod") #this is not fetching the option properly.... 
     print("volume_analysis print of target_period: ", target_period)
     return jsonify(target_period)
-
-@app.route('/upload', methods=['POST'])
-def upload():
-    print("Entered upload function. ") 
-    #file = request.files[]
-    return render_template("upload-success.html") #have return statement to a "success" page. 
     
-
-@app.route('/validate_csv_format', methods=["POST"])
-def validate_csv_format():
-    print("Entered validate_csv_format. ")
+    
+@app.route('/upload', methods=["POST"])
+def upload_file():
+    print("Entered upload_file. ")
 
     #Received object with form data is a list-like structure (immutable dict): 
     submission_type = request.form.getlist("uploadType")[0]
-    print("File type: ", submission_type)
     
     if submission_type is None : # null check -- using string literal as JSON "none" was received
         print("Error: Form submission type not selected.")
         return False
     
     if submission_type == "training":
-        print("Detected Training file")
+        print("Detected Training file... uploading.")
         
+        uploaded_file = request.files['userUpload']
+        file_name = uploaded_file.filename
+        print("File name: ", file_name)
+        
+        #save to files folder -- extend this logic to ensure no duplicates: 
+        uploaded_file.save(os.path.join(app.config['training_log_folder'], file_name))
+        validate_CSV(file_name, submission_type)
+        
+        return "Server file upload Success."        
     
     # Detect weight file and call processing function
     if submission_type == "weight":
         print("Detected Weight file... uploading.")
         
         uploaded_file = request.files['userUpload']
-        filename = uploaded_file.filename
-        print("File name: ", filename)
+        file_name = uploaded_file.filename
+        print("File name: ", file_name)
         
         #save to files folder -- extend this logic to ensure no duplicates: 
-        uploaded_file.save(os.path.join(app.config['weight_log_folder'], filename))
-        return "Success"
+        uploaded_file.save(os.path.join(app.config['weight_log_folder'], file_name))
+        validate_CSV(file_name, submission_type)
 
+        return "Server file upload Success."
+
+    return "Upload Error Occurred. Please contact Admin.", 400
+
+def validate_CSV(file_name, type):
+    """
     
-    #python/dictionary -> JS/JSON
-    dummyData = {
-        "log":"Training Log",
-        "Excercise":"Flat Barbell Bench",
-         "Sets": 4,
-         "reps": 8        
-    } 
-    return json.dumps(dummyData) #JSON format 
-
+    """
+    print("Type is: ", type)
+    
+    if type == "training": 
+        #set location of file: 
+        file_location = os.path.join(app.config['training_log_folder'], file_name)
+        print(file_location)
+        
+        #open uploaded file
+        reader = open(file_location, "r")
+        reader.flush()
+        
+        #read all file contents: 
+        file_contents = reader.read(-1)
+        print(file_contents)
+        
+        #close file:
+        reader.close
+        return True
+    
+    if type == "weight":
+        #set location of file: 
+        file_location = os.path.join(app.config['weight_log_folder'], file_name)
+        print(file_location)
+        
+        #open uploaded file
+        reader = open(file_location, "r")
+        reader.flush()
+        
+        #read all file contents: 
+        file_contents = reader.read(-1)
+        print(file_contents)
+        
+        #close file:
+        reader.close
+        return True
+    
+    return False
+    
 
 
 def process_weight_log():

@@ -56,17 +56,17 @@
 
         $.ajax({
             type:"POST",
-            url:"/validate_csv_format",
+            url:"/upload",
             data: form_data,
             processData: false,
             contentType: false,
             success: function(data) {
-                alert("Submitted file is valid!")
+                alert("Upload success!")
                 console.log(data)
                 return true;
             },
             error: function() {
-                alert("Submitted file is not valid! ")
+                alert("Error: Submitted file is not valid!")
                 return false;
             }
         })
