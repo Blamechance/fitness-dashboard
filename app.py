@@ -21,8 +21,8 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 # Define path to upload folders
-app.config['weight_log_folder'] = '/files/weight_logs'
-app.config['training_log_folder'] = '/files/training_logs'
+app.config['weight_log_folder'] = 'files/weight_logs'
+app.config['training_log_folder'] = 'files/training_logs'
 
 app.config['MAX_CONTENT_PATH'] = 50000 #sample files average 20KB. 
 
@@ -210,9 +210,10 @@ def upload():
 @app.route('/validate_csv_format', methods=["POST"])
 def validate_csv_format():
     print("Entered validate_csv_format. ")
-    
-    submission_type = request.get_json("userFileType")
-    print(submission_type)
+
+    #Received object with form data is a list-like structure (immutable dict): 
+    submission_type = request.form.getlist("uploadType")[0]
+    print("File type: ", submission_type)
     
     if submission_type is None : # null check -- using string literal as JSON "none" was received
         print("Error: Form submission type not selected.")
@@ -224,7 +225,16 @@ def validate_csv_format():
     
     # Detect weight file and call processing function
     if submission_type == "weight":
-        print("Detected Weight file")
+        print("Detected Weight file... uploading.")
+        
+        uploaded_file = request.files['userUpload']
+        filename = uploaded_file.filename
+        print("File name: ", filename)
+        
+        #save to files folder -- extend this logic to ensure no duplicates: 
+        uploaded_file.save(os.path.join(app.config['weight_log_folder'], filename))
+        return "Success"
+
     
     #python/dictionary -> JS/JSON
     dummyData = {

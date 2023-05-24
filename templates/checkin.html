@@ -11,7 +11,7 @@
 
 
 <!-- use onsubmit for validation, to prevent needing an asynchronous call -->
-<form method="post" onsubmit="validateCSV()" action="/upload" enctype = "multipart/form-data">
+<form id="checkin-form" method="post" onsubmit="validateCSV()" action="/upload" enctype = "multipart/form-data">
     <select id="userDataType" name="uploadType">
         <option value="none" selected disabled hidden>Select an Option</option>
         <option value="training">Training Log</option>
@@ -26,8 +26,11 @@
     function validateCSV() {
         event.preventDefault(); // Prevents form from submitting and reloading the page
 
-        //Take user's option to indicate which export file they are uploading - either "Training" or "Weight"
+        //Take user's option to indicate which export file they are uploading, stringify for server
         let userFileType = document.getElementById("userDataType").value; 
+        userFileType = JSON.stringify(userFileType);
+
+
         let userFile = document.getElementById("userFile"); 
 
         console.log(userFile.files)
@@ -47,13 +50,16 @@
             return false;
         };
 
-        console.log(JSON.stringify(userFileType)); 
-
+        var form = document.getElementById("checkin-form");
+        var form_data = new FormData(form);
+        console.log(form_data)
 
         $.ajax({
             type:"POST",
             url:"/validate_csv_format",
-            data: JSON.stringify(userFileType),
+            data: form_data,
+            processData: false,
+            contentType: false,
             success: function(data) {
                 alert("Submitted file is valid!")
                 console.log(data)
