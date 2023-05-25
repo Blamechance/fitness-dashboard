@@ -23,10 +23,18 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 # Define path to upload folders
 app.config['weight_log_folder'] = 'files/weight_logs'
 app.config['training_log_folder'] = 'files/training_logs'
-
 app.config['MAX_CONTENT_PATH'] = 50000 #sample files average 20KB. 
 
+#Define appropriate CSV headers + byte length for validate function: 
+training_headers = "Date,Exercise,Category,Weight (kgs),Reps,Distance,Distance Unit,Time,Comment"
+weight_headers = "Date,Time,Measurement,Value,Unit,Comment"
+t_header_length = len(training_headers) #works on logic that chars are one byte
+w_header_length = len(weight_headers)
+valid_extensions = ('.csv', '.txt', '.CSV', '.TXT')
 
+
+print("training header length: ", t_header_length)
+print("weight header length: ", w_header_length)
 
 #current time/date: 
 currentTimeDate = datetime.datetime.now()
@@ -217,11 +225,18 @@ def upload_file():
         
         uploaded_file = request.files['userUpload']
         file_name = uploaded_file.filename
-        print("File name: ", file_name)
         
+        if not file_name.endswith(valid_extensions): # .csv, .CSV, .txt or .TXT
+            print("File is not of .txt or .csv")
+            return "File format error. Please export your file and try again. ", 400
+        
+        print("File name: ", file_name)
         #save to files folder -- extend this logic to ensure no duplicates: 
         uploaded_file.save(os.path.join(app.config['training_log_folder'], file_name))
-        validate_CSV(file_name, submission_type)
+        if validate_CSV(file_name, submission_type) == False:
+            print("Bad upload - validation failed. Deleting file.")
+            os.remove((os.path.join(app.config['training_log_folder'], file_name)))
+            return "File format error. Please export your file and try again. ", 400
         
         return "Server file upload Success."        
     
@@ -231,11 +246,20 @@ def upload_file():
         
         uploaded_file = request.files['userUpload']
         file_name = uploaded_file.filename
-        print("File name: ", file_name)
         
+        if not file_name.endswith(valid_extensions): # .csv, .CSV, .txt or .TXT
+            print("File is not of .txt or .csv")
+            return "File format error. Please export your file and try again. ", 400
+        
+        print("File name: ", file_name)
         #save to files folder -- extend this logic to ensure no duplicates: 
         uploaded_file.save(os.path.join(app.config['weight_log_folder'], file_name))
         validate_CSV(file_name, submission_type)
+        
+        if validate_CSV(file_name, submission_type) == False:
+            os.remove((os.path.join(app.config['weight_log_folder'], file_name)))
+            print("Bad upload - validation failed. Deleting file.")
+            return "File format error. Please export your file and try again. ", 400
 
         return "Server file upload Success."
 
@@ -250,36 +274,48 @@ def validate_CSV(file_name, type):
     if type == "training": 
         #set location of file: 
         file_location = os.path.join(app.config['training_log_folder'], file_name)
-        print(file_location)
         
         #open uploaded file
         reader = open(file_location, "r")
         reader.flush()
         
         #read all file contents: 
-        file_contents = reader.read(-1)
-        print(file_contents)
+        file_headers = reader.read(t_header_length)
+        print(file_headers)
         
-        #close file:
-        reader.close
-        return True
+        #check if headers are as expected: 
+        if file_headers == training_headers:
+            print("File headers are valid - uploading file. ")
+            reader.close
+            return True
+
+        else: # delete the file from directory and return error 400 to user as file is invalid
+            print("CSV file not in expected format - aborting upload.")
+            reader.close
+            return False 
     
     if type == "weight":
         #set location of file: 
         file_location = os.path.join(app.config['weight_log_folder'], file_name)
-        print(file_location)
         
         #open uploaded file
         reader = open(file_location, "r")
         reader.flush()
         
         #read all file contents: 
-        file_contents = reader.read(-1)
-        print(file_contents)
+        file_headers = reader.read(w_header_length)
+        print(file_headers)
         
-        #close file:
-        reader.close
-        return True
+        #check if headers are as expected: 
+        if file_headers == weight_headers:
+            print("File headers are valid - uploading file.")
+            reader.close
+            return True
+
+        else: # delete the file from directory and return error 400 to user as file is invalid
+            print("CSV file not in expected format - aborting upload.")
+            reader.close
+            return False 
     
     return False
     
