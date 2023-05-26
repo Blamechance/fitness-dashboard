@@ -32,17 +32,13 @@ T_HEADER_LENGTH = len(TRAINING_HEADERS) #works on logic that chars are one byte
 W_HEADER_LENGTH = len(WEIGHT_HEADERS)
 VALID_EXTENSIONS = ('.csv', '.txt', '.CSV', '.TXT')
 
-
-print("training header length: ", T_HEADER_LENGTH)
-print("weight header length: ", W_HEADER_LENGTH)
-
 #current time/date: 
 CURRENT_TIME_DATE = datetime.datetime.now()
 
 #return the current month as a digit
 current_month = int(CURRENT_TIME_DATE.strftime("%m")) #%m prints month as digit
-CURRENT_YEAR = int(CURRENT_TIME_DATE.strftime("%Y")) #e.g 2013, 2019 etc.
-last_year = CURRENT_YEAR - 1
+current_year = int(CURRENT_TIME_DATE.strftime("%Y")) #e.g 2013, 2019 etc.
+last_year = current_year - 1
 
 
 @app.route('/', methods=["GET", "POST"])
@@ -113,8 +109,8 @@ def fetch12mXAxis():
         last_12_months.append(str(target_month_text) + " " + str(last_year))
                 
     for m in range(current_month):
-        target_month_text = datetime.date(CURRENT_YEAR, int(month_list_digits[last_yr_months+m]), 1).strftime('%b')
-        last_12_months.append(str(target_month_text) + " " + str(CURRENT_YEAR))
+        target_month_text = datetime.date(current_year, int(month_list_digits[last_yr_months+m]), 1).strftime('%b')
+        last_12_months.append(str(target_month_text) + " " + str(current_year))
             
     return last_12_months
 
@@ -154,10 +150,10 @@ def fetch6mXAxis():
     for m in range(last_yr_months, 6, 1):
         target_month_text = datetime.date(1, int(month_list_digits[m]), 1).strftime('%b')
         
-        target_month_text = datetime.date(CURRENT_YEAR, int(month_list_digits[m]), 1).strftime("%d %b, %Y")
+        target_month_text = datetime.date(current_year, int(month_list_digits[m]), 1).strftime("%d %b, %Y")
         last_6_months.append(str(target_month_text))
 
-        target_month_text = datetime.date(CURRENT_YEAR, int(month_list_digits[m]), 15).strftime("%d %b, %Y")
+        target_month_text = datetime.date(current_year, int(month_list_digits[m]), 15).strftime("%d %b, %Y")
         last_6_months.append(str(target_month_text))
             
     return last_6_months
@@ -196,8 +192,8 @@ def fetch3mXAxis():
 
         else: 
             target_month_text = datetime.date(1, int(month_list_digits[k]), 1).strftime('%b')
-            last_3_months.append(str(target_month_text) + " 01, " + str(CURRENT_YEAR))
-            last_3_months.append(str(target_month_text) + " 15, " + str(CURRENT_YEAR))
+            last_3_months.append(str(target_month_text) + " 01, " + str(current_year))
+            last_3_months.append(str(target_month_text) + " 15, " + str(current_year))
             
     return last_3_months
 

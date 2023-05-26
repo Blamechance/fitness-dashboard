@@ -16,7 +16,7 @@
         <option value="none" selected disabled hidden>Select an Option</option>
         <option value="training">Training Log</option>
         <option value="weight">Body Tracking Log</option>
-    <input type="file" id="userFile" name="userUpload">
+    <input type="file" id="userFile" name="userUpload" accept="text/csv">
     <input type="submit">
 </form>
 
@@ -60,7 +60,7 @@
             data: form_data,
             processData: false,
             contentType: false,
-            success: function(data) {
+            success: function(data) { //once process functions are complete in server file, call it here. 
                 alert("Upload success!")
                 console.log(data)
                 return true;
