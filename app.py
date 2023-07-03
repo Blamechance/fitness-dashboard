@@ -86,6 +86,8 @@ def raymond():
 def fetch12mXAxis():
     last_12_months = [] #final list of months to pass to Tommy's chart
     month_list_digits = [] #temp buffer to create list of months. 
+    last_yr_months = (12 - current_month)
+
 
     #create a list of months in digit form: 
     if current_month == 12:
@@ -93,8 +95,6 @@ def fetch12mXAxis():
 
     
     elif current_month < 12:
-        last_yr_months = (12 - current_month)
-
         #create a list counting backwards from current month
         for i in range(current_month):
             month_list_digits.insert(0, (current_month - i))
@@ -117,6 +117,8 @@ def fetch12mXAxis():
 def fetch6mXAxis():
     last_6_months = [] #final list of months to pass to Tommy's chart
     month_list_digits = [] #temp buffer to create list of months.     
+    last_yr_months = (12 - current_month)
+
     
     if current_month <= 6:
         last_yr_months = (6 - current_month)
@@ -160,7 +162,8 @@ def fetch6mXAxis():
     
 def fetch3mXAxis():
     last_3_months = [] #final list of months to pass to Tommy's chart
-    month_list_digits = [] #temp buffer to create list of months.     
+    month_list_digits = [] #temp buffer to create list of months.
+    last_yr_months = (12 - current_month)     
     
     if current_month <= 3:
         last_yr_months = (3 - current_month)
@@ -317,15 +320,16 @@ def validate_CSV(file_name, type):
             print("CSV file not in expected format - aborting upload.")
             reader.close
             return False 
-    
     return False
     
 
 
 def process_weight_log():
     """
-        This function takes in the submitted weight excel sheet, processes and formats it to {"date":"weight"} JSON list. 
-        This data will then be checked against the SQL database - any data points that do not exist as entries in the DB will be created.        
+        This function is called when the user prompts a button on the check-in page of website. 
+        - All sheets in the related file directories are processed to pull out relevant data into a  {"date":"weight"} JSON list. 
+        - These JSON files will be backed up on the file system to operate as a "snapshot". 
+        - Eventually, these snapshots will be viewable, and recoverable.         
     """
     
     
