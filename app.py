@@ -331,6 +331,13 @@ def process_weight_log():
         - These JSON files will be backed up on the file system to operate as a "snapshot". 
         - Eventually, these snapshots will be viewable, and recoverable.         
     """
-    
+    #Create a JSON file to populate in the archive folder, creating a folder for the user's name 
+    #TODO: Might need to revisit after working on sessions and user authentication. 
+
+    #Start processing the CSV's, extracting relevant data into a python dictionary. 
+
+    #use json.dumps() to convert python object into JSON object -- write this to the file. 
+
+    # 
     
     return "Entered process_csv."
