@@ -27,34 +27,29 @@
         event.preventDefault(); // Prevents form from submitting and reloading the page
 
         //Take user's option to indicate which export file they are uploading, stringify for server
-        let userFileType = document.getElementById("userDataType").value; 
-        userFileType = JSON.stringify(userFileType);
+        var userFileType = document.getElementById("userDataType").value; 
 
+        // Check if user selected a file type: 
+        if (userFileType === "none") {
+            console.log("File was not valid. Aborting form submission."); 
+            alert("Error: Please check a file type option was selected.")
+            return false; 
+        };
 
-        let userFile = document.getElementById("userFile"); 
-
-        console.log(userFile.files)
-
-
+        var userFile = document.getElementById("userFile"); 
+        console.log("userFileType = " + userFileType)
+        
         // Check if user attached a file to form: 
         if (userFile.files.length == 0){ //cannot compare against "true" as .files returns a JSON object (list-like)
             console.log("File was not valid. Aborting form submission."); 
-            alert("File was not valid. \nPlease check that a file was chosen.")
+            alert("Error: Please check that a file was chosen.")
             return false;
         } 
 
-        // Check if user selected a file type: 
-        if (userFileType == null || userFileType == "none"){
-            console.log("File was not valid. Aborting form submission."); 
-            alert("File was not valid. \nPlease check an option was selected.")
-            return false;
-        };
-
         var form = document.getElementById("checkin-form");
         var form_data = new FormData(form);
-        console.log(form_data)
-
-        $.ajax({
+        
+        $.ajax({    //run upload function asynchronously
             type:"POST",
             url:"/upload",
             data: form_data,

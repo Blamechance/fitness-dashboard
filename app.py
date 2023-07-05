@@ -1,5 +1,6 @@
 import os
 import datetime
+from datetime import datetime
 import calendar
 import sqlite3
 import json
@@ -13,9 +14,6 @@ from werkzeug.security import check_password_hash, generate_password_hash
 # Configure application - this lets flask know to use the "app.py" file
 app = Flask(__name__)
 
-if __name__ == "__main__":
-    app.run(debug=True)
-
 # Disable caching + enable debug/auto reload of page:
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -23,6 +21,7 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 # Define path to upload folders
 app.config['WEIGHT_LOG_FOLDER'] = 'files/weight_logs'
 app.config['TRAINING_LOG_FOLDER'] = 'files/training_logs'
+app.config['LOG_ARCHIVE'] = 'files/log_archive'
 app.config['MAX_CONTENT_PATH'] = 50000 #sample files average 20KB. 
 
 #Define appropriate CSV headers + byte length for validate function: 
@@ -33,7 +32,7 @@ W_HEADER_LENGTH = len(WEIGHT_HEADERS)
 VALID_EXTENSIONS = ('.csv', '.txt', '.CSV', '.TXT')
 
 #current time/date: 
-CURRENT_TIME_DATE = datetime.datetime.now()
+CURRENT_TIME_DATE = datetime.now()
 
 #return the current month as a digit
 current_month = int(CURRENT_TIME_DATE.strftime("%m")) #%m prints month as digit
@@ -217,11 +216,11 @@ def upload_file():
     print("Entered upload_file. ")
 
     #Received object with form data is a list-like structure (immutable dict): 
-    submission_type = request.form.getlist("uploadType")[0]
-    
-    if submission_type is None : # null check -- using string literal as JSON "none" was received
+    if len(request.form.getlist("uploadType")) == 0: # null check -- using string literal as JSON "none" was received
         print("Error: Form submission type not selected.")
-        return False
+        return "Error: Form submission type not selected.", 400
+
+    submission_type = request.form.getlist("uploadType")[0]
     
     if submission_type == "training":
         print("Detected Training file... uploading.")
@@ -240,6 +239,8 @@ def upload_file():
             print("Bad upload - validation failed. Deleting file.")
             os.remove((os.path.join(app.config['TRAINING_LOG_FOLDER'], file_name)))
             return "File format error. Please export your file and try again. ", 400
+        
+        process_weight_log()
         return "Server file upload Success."        
     
     # Detect weight file and call processing function
@@ -262,7 +263,8 @@ def upload_file():
             os.remove((os.path.join(app.config['WEIGHT_LOG_FOLDER'], file_name)))
             print("Bad upload - validation failed. Deleting file.")
             return "File format error. Please export your file and try again. ", 400
-
+        
+        process_weight_log()
         return "Server file upload Success."
 
     return "Upload Error Occurred. Please contact Admin.", 400
@@ -272,6 +274,8 @@ def validate_CSV(file_name, type):
     This function checks that the uploaded file is:
      - A text/CSV file
      - of correct header format and length, for the respective chosen file type
+
+     
     """
     print("Type is: ", type)
     
@@ -331,13 +335,55 @@ def process_weight_log():
         - These JSON files will be backed up on the file system to operate as a "snapshot". 
         - Eventually, these snapshots will be viewable, and recoverable.         
     """
-    #Create a JSON file to populate in the archive folder, creating a folder for the user's name 
     #TODO: Might need to revisit after working on sessions and user authentication. 
+    #NOTE: This function will delete existing copies of the json file, so insert a backup function before proceeding
 
-    #Start processing the CSV's, extracting relevant data into a python dictionary. 
+    #Create a JSON file to populate in the archive folder, 
+    #TODO: Upload to/create within folder according to username
+    file_name = "weight_history_log.json"
+    weight_history = {}
+    file_location = os.path.join(app.config['LOG_ARCHIVE'], file_name)
 
+    #create/overwrite the existing json log file. 
+    with open(file_location, 'w', encoding="utf-8") as weight_history_log:
+        weight_history_log.write(json.dumps(weight_history))
+
+    #Start processing the CSV's, extracting relevant data into a python dictionary.
+     
+
+    #Check for most recent file:
+    # 1. Slice date sections of all filenames in directory. 
+    # 2. Convert to datetime compatible for comparison with max()
+    # Once max file found, save it's name. 
+    weight_logs_directory = os.listdir(app.config['WEIGHT_LOG_FOLDER'])    
+
+    input_format = "%Y_%m_%d_%H_%M_%S" 
+    output_iso_format = "%Y-%m-%dT%H:%M:%S"
+    date_list = [] 
+
+
+    for item in weight_logs_directory: 
+        sliced_filename = item[item.index("2023"):item.index(".csv")]
+        unformatted_date = datetime.strptime(sliced_filename, input_format)
+        iso_date = unformatted_date.strftime(output_iso_format)
+        date_list.append(iso_date)
+
+        print(f"Current loop sliced file name:{sliced_filename}")
+        print(f"Current loop sliced file date:{iso_date}")
+
+    most_recent_date = max(date_list)
+    print(most_recent_date)
+
+
+    
+    
     #use json.dumps() to convert python object into JSON object -- write this to the file. 
 
     # 
     
     return "Entered process_csv."
+
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
