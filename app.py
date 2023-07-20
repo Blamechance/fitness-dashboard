@@ -1,12 +1,14 @@
 import os
 import datetime
-from datetime import datetime
 import calendar
 import sqlite3
 import json
+import pandas as pd
 
+from datetime import datetime
 from flask import Flask, flash, redirect, render_template, request, session, jsonify
 from flask_session import Session
+from json import loads, dumps
 from tempfile import mkdtemp
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -213,8 +215,6 @@ def upload_file():
     This function receives the file attached to the form submission for processing. 
     If file is found to not be of .csv/.txt or data validation fails, then file is deleted and error code is returned. 
     """
-    print("Entered upload_file. ")
-
     #Received object with form data is a list-like structure (immutable dict): 
     if len(request.form.getlist("uploadType")) == 0: # null check -- using string literal as JSON "none" was received
         print("Error: Form submission type not selected.")
@@ -222,9 +222,7 @@ def upload_file():
 
     submission_type = request.form.getlist("uploadType")[0]
     
-    if submission_type == "training":
-        print("Detected Training file... uploading.")
-        
+    if submission_type == "training":        
         uploaded_file = request.files['userUpload']
         file_name = uploaded_file.filename
         
@@ -289,7 +287,6 @@ def validate_CSV(file_name, type):
         
         #read all file contents: 
         file_headers = reader.read(T_HEADER_LENGTH)
-        print(file_headers)
         
         #check if headers are as expected: 
         if file_headers == TRAINING_HEADERS:
@@ -312,11 +309,9 @@ def validate_CSV(file_name, type):
         
         #read all file contents: 
         file_headers = reader.read(W_HEADER_LENGTH)
-        print(file_headers)
         
         #check if headers are as expected: 
         if file_headers == WEIGHT_HEADERS:
-            print("File headers are valid - uploading file.")
             reader.close
             return True
 
@@ -342,10 +337,10 @@ def process_weight_log():
     #TODO: Upload to/create within folder according to username
     file_name = "weight_history_log.json"
     weight_history = {}
-    file_location = os.path.join(app.config['LOG_ARCHIVE'], file_name)
+    archive_file_location = os.path.join(app.config['LOG_ARCHIVE'], file_name)
 
     #create/overwrite the existing json log file. 
-    with open(file_location, 'w', encoding="utf-8") as weight_history_log:
+    with open(archive_file_location, 'w', encoding="utf-8") as weight_history_log:
         weight_history_log.write(json.dumps(weight_history))
 
     #Start processing the CSV's, extracting relevant data into a python dictionary.
@@ -359,27 +354,40 @@ def process_weight_log():
 
     input_format = "%Y_%m_%d_%H_%M_%S" 
     output_iso_format = "%Y-%m-%dT%H:%M:%S"
-    date_list = [] 
+    file_prefix = "/FitNotes_BodyTracker_Export_" 
+    file_suffix = ".csv"
+    date_list = {} 
 
 
     for item in weight_logs_directory: 
-        sliced_filename = item[item.index("2023"):item.index(".csv")]
+        sliced_filename = item[item.index("202"):item.index(".csv")] #index between year and csv (inclusive of year but not csv)
         unformatted_date = datetime.strptime(sliced_filename, input_format)
         iso_date = unformatted_date.strftime(output_iso_format)
-        date_list.append(iso_date)
-
-        print(f"Current loop sliced file name:{sliced_filename}")
-        print(f"Current loop sliced file date:{iso_date}")
-
-    most_recent_date = max(date_list)
-    print(most_recent_date)
+        date_list[sliced_filename] = iso_date
 
 
-    
+    most_recent_date = str(max(date_list)) # use value (date in iso) for max, but pass in the key (date in file's format) to variable
+
+    #Open and parse target file, creating a python dictionary of {date:weight} 
+    drop_columns = ["Time", "Measurement", "Unit", "Comment"]
+
+    filename = f"{file_prefix}{most_recent_date}{file_suffix}"
+    print(f"file name restored:{filename}")
+    df = pd.read_csv(app.config['WEIGHT_LOG_FOLDER']+filename)
+
+    cleaned_df = df.drop(drop_columns, axis='columns')
+    print(cleaned_df)
+    parsed_json_output= cleaned_df.to_json(orient='split') #argument to convert output to json string
+
+    with open(archive_file_location, 'w', encoding="utf-8") as weight_history_log:
+        weight_history_log.write(json.dumps(parsed_json_output))
+
+
+
     
     #use json.dumps() to convert python object into JSON object -- write this to the file. 
 
-    # 
+
     
     return "Entered process_csv."
 
