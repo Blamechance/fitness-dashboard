@@ -104,7 +104,7 @@ def fetch12mXAxis():
         for j in range(12, (12 - last_yr_months), -1):
             month_list_digits.insert(0, j)
         
-        #Convert the list of digits into their month abbrev. forms
+    #Convert the list of digits into their month abbrev. forms
     for k in range(last_yr_months):
         target_month_text = datetime.date(1, int(month_list_digits[k]), 1).strftime('%b')
         last_12_months.append(str(target_month_text) + " " + str(last_year))
