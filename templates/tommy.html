@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+{% extends "athletelayout.html" %}
 
 {% block title %}
     Tommy
@@ -8,5 +8,193 @@
 
 <h1> Tommy's statistics </h1>
 <p>Hello, World - this is Tommy.</p>
+
+<h3> Bodyweight Tracking:</h3>
+
+<canvas id="tommyWeightGraph" style="max-width: 60%;"></canvas>
+
+<button id="3m-button" type="button">3 Months</button>
+<button id="6m-button" type="button">6 Months</button>
+<button id="12m-button" type="button">12 Months</button>
+
+<!-- Weight Graph -->
+<script>
+    //Configure default chart to be loaded on page render:
+    const weightChartData = {
+        labels: JSON.parse('{{ x_axis_12 | tojson }}'),
+        datasets: [{
+            label: "Weight (kg)", 
+            data: [55, 58, 60, 63, 60, 65, 70, 72, 65, 80, 78, 75],
+            borderColor: 'rgb(242,133,0)',
+            tension: 0.1,
+            fill: false
+        }]
+    }; 
+
+    const weightChartOptions = {
+        //for future use: 
+    };
+
+    //Setting default render of weight graph to 12 months
+    //TODO: Add dynamic 12 month dataset. 
+    tommyWeightGraph = new Chart("tommyWeightGraph", {
+        type: "line",
+        data: weightChartData,
+        options: weightChartOptions
+    });
+
+</script>
+
+<script>
+    //Button Functionality for 3-month chart. 
+    let Button3m = document.getElementById("3m-button"); 
+
+    //Initialise new chart axis and update on buttom prompt:
+    Button3m.addEventListener("click", function() {
+        tommyWeightGraph.data = {
+            labels: JSON.parse('{{ x_axis_3 | tojson }}'),
+            datasets: [{
+                label: "Weight (kg)", 
+                data: [72, 79, 75, 77, 62, 65] ,
+                borderColor: 'rgb(242,133,0)',
+                tension: 0.1,
+                fill: false
+            }]  
+        }
+        tommyWeightGraph.update();
+    });
+
+    //Button Functionality for 12-month chart. 
+    let Button12m = document.getElementById("12m-button"); 
+
+    //Initialise new chart axis and update on buttom prompt:
+    Button12m.addEventListener("click", function() {
+        tommyWeightGraph.data = {
+            labels: JSON.parse('{{ x_axis_12 | tojson }}'),
+            datasets: [{
+                label: "Weight (kg)", 
+                data: [55, 58, 60, 63, 60, 65, 70, 72, 65, 80, 78, 75],
+                borderColor: 'rgb(242,133,0)',
+                tension: 0.1,
+                fill: false
+            }]
+        }
+        tommyWeightGraph.update();
+    });
+
+    //Button Functionality for 6-month chart. 
+    let Button6m = document.getElementById("6m-button"); 
+
+    //Initialise new chart axis and update on buttom prompt:
+    Button6m.addEventListener("click", function() {
+        tommyWeightGraph.data = {
+            labels: JSON.parse('{{ x_axis_6 | tojson }}'),
+            datasets: [{
+                label: "Weight (kg)", 
+                data: [72, 79, 75, 77, 62, 65, 72, 79, 75, 77, 62, 65],
+                borderColor: 'rgb(242,133,0)',
+                tension: 0.1,
+                fill: false
+            }]
+        }
+        tommyWeightGraph.update();
+    });
+</script>
+
+
+<h3> Muscle Group/Sets Volume Analysis:</h3>
+
+<canvas id="tommyVolGraph" style="max-width: 60%;"></canvas>
+
+<form id="vol-form" name="vol-form-box" method="post" onsubmit="fetchVolumeAnalysis()">
+    <label for ="vol-analysis-period">Select Target Training Period to Analyse:</label><br>
+    <select id="vol-period-selection" name="vol-analysis-period">    
+    <input type="submit" id="volume-submit-btn" name="vol-input" value="Analyse"/>
+</form>
+
+<!-- <button class="btn btn-primary" id="volForm-btn" type="submit">Analyse</button> <!-- manual analyse button / alternative for form submit-->
+
+
+<script>
+    console.log("Pushing volume graph options...")
+    var trainingCycles = {
+        "01-01-2023": [1, 1, 1, 1, 1, 1],
+        "02-02-2023": [2, 2, 2, 2, 2, 2],
+        "03-03-2023": [3, 3, 3, 3, 3, 3]
+    }; //This will be a list of dates, representing the week of which to analyse -- maybe as a dictionary? 
+
+    var list = document.getElementById("vol-period-selection"); 
+    for(var i in trainingCycles) {
+        list.add(new Option(trainingCycles[i])); 
+    }
+
+</script>
+
+
+<!-- Muscle Group Sets Graph -->
+<script>
+    //Configure default graph
+    const setsChartData = {
+        labels: [
+            'Pink - Chest',
+            'Blue - Shoulders',
+            'Yellow - Back',
+            'Green - Legs',
+            'Purple - Biceps',
+            'Red - Triceps'
+        ],
+        datasets: [{
+            label: 'Total Muscle Groups',
+            data: [12, 16, 25, 20, 8, 8],
+            backgroundColor: [
+            'rgb(248, 131, 121)',
+            'rgb(54, 162, 235)',
+            'rgb(255, 205, 86)',
+            'rgb(80,200,120)',
+            'rgb(127, 0, 255)',
+            'rgb(255,36,0)'
+            ],
+            hoverOffset: 4
+        }]
+    };
+
+    //Initialise default graph: 
+    tommyVolGraph = new Chart("tommyVolGraph", {
+        type: "doughnut",
+        data: setsChartData
+    });
+</script>
+
+<script>
+    //Functionality to update Muscle Group Analysis graph: 
+
+    //On selecting a period, pass the dates back to app.py for processing. Use the returned values to update graph. 
+    function fetchVolumeAnalysis() {
+        let volForm = document.getElementById("volume-submit-btn"); 
+        let userPeriod = document.getElementById("vol-period-selection").value;
+
+        event.preventDefault(); // Prevents form from submitting and reloading the page
+        console.log("Client side userPeriod = " + userPeriod); 
+
+        //Send the selected period to the server. Use data returned to update graph.
+        $.ajax({
+            type: "POST", 
+            url: "/volume_analysis",
+            data: JSON.stringify(userPeriod),
+            success: function(data) {
+                var volResult = data;
+                console.log("Data received : " + data)
+
+                //Code to update graph with new values: 
+                tommyVolGraph.data.datasets[0].data = volResult.split(",");
+                tommyVolGraph.update();
+            },
+            error: function() {
+                alert("Volume Analysis Error: Failed to receive target period's data from server. ")
+            }
+        })
+    };
+</script>
+
 
 {% endblock %}

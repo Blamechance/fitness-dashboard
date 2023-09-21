@@ -7,6 +7,65 @@
 {% block main %}
 
 <h1> Progress Check-in </h1>
-<p>Hello, World.</p>
+<p>Upload your fitnotes export files to check-in!</p>
+
+
+<!-- use onsubmit for validation, to prevent needing an asynchronous call -->
+<form id="checkin-form" method="post" onsubmit="validateCSV()" action="/upload" enctype = "multipart/form-data">
+    <select id="userDataType" name="uploadType">
+        <option value="none" selected disabled hidden>Select an Option</option>
+        <option value="training">Training Log</option>
+        <option value="weight">Body Tracking Log</option>
+    <input type="file" id="userFile" name="userUpload" accept="text/csv">
+    <input type="submit">
+</form>
+
+<!-- Send data to server -->
+<script>
+    //Need to change AJAX syntax format for best practice:
+    function validateCSV() {
+        event.preventDefault(); // Prevents form from submitting and reloading the page
+
+        //Take user's option to indicate which export file they are uploading, stringify for server
+        var userFileType = document.getElementById("userDataType").value; 
+
+        // Check if user selected a file type: 
+        if (userFileType === "none") {
+            console.log("File was not valid. Aborting form submission."); 
+            alert("Error: Please check a file type option was selected.")
+            return false; 
+        };
+
+        var userFile = document.getElementById("userFile"); 
+        console.log("userFileType = " + userFileType)
+        
+        // Check if user attached a file to form: 
+        if (userFile.files.length == 0){ //cannot compare against "true" as .files returns a JSON object (list-like)
+            console.log("File was not valid. Aborting form submission."); 
+            alert("Error: Please check that a file was chosen.")
+            return false;
+        } 
+
+        var form = document.getElementById("checkin-form");
+        var form_data = new FormData(form);
+        
+        $.ajax({    //run upload function asynchronously
+            type:"POST",
+            url:"/upload",
+            data: form_data,
+            processData: false,
+            contentType: false,
+            success: function(data) { //once process functions are complete in server file, call it here. 
+                alert("Upload success!")
+                console.log(data)
+                return true;
+            },
+            error: function() {
+                alert("Error: Submitted file is not valid!")
+                return false;
+            }
+        })
+    }; 
+</script>
 
 {% endblock %}
