@@ -1,11 +1,13 @@
 import os
 import datetime
-import calendar
-import sqlite3
 import json
 import pandas as pd
 
+
+from datetime import date
 from datetime import datetime
+from boltons import timeutils
+
 from flask import Flask, flash, redirect, render_template, request, session, jsonify
 from flask_session import Session
 from json import loads, dumps
@@ -36,10 +38,15 @@ VALID_EXTENSIONS = ('.csv', '.txt', '.CSV', '.TXT')
 #current time/date: 
 CURRENT_TIME_DATE = datetime.now()
 
+
 #return the current month as a digit
 current_month = int(CURRENT_TIME_DATE.strftime("%m")) #%m prints month as digit
 current_year = int(CURRENT_TIME_DATE.strftime("%Y")) #e.g 2013, 2019 etc.
-last_year = current_year - 1
+current_day = int(CURRENT_TIME_DATE.strftime("%-d")) #e.g 1, 17, 31 etc. 
+last_year = int(current_year) - 1
+
+DATETIME_NOW = date(current_year, current_month, current_day) # use previous variables to build dateobject
+
 
 
 @app.route('/', methods=["GET", "POST"])
@@ -85,121 +92,58 @@ def raymond():
     
 
 def fetch12mXAxis():
-    last_12_months = [] #final list of months to pass to Tommy's chart
-    month_list_digits = [] #temp buffer to create list of months. 
-    last_yr_months = (12 - current_month)
-
-
-    #create a list of months in digit form: 
-    if current_month == 12:
-        month_list_digits = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-
+    #set start and end dates, from JS data. 
+    last_year = int(current_year) - 1
     
-    elif current_month < 12:
-        #create a list counting backwards from current month
-        for i in range(current_month):
-            month_list_digits.insert(0, (current_month - i))
-            
-        #Adding months from last year: 
-        for j in range(12, (12 - last_yr_months), -1):
-            month_list_digits.insert(0, j)
+    prev_12_months = []
+    counter = 0 
+    for month in timeutils.daterange(DATETIME_NOW, None, step=(0, -1, 0), inclusive=True):
+        # convert the list item to human readable format, with strptime(): 
+        data_point = month.strftime("%d %b, %Y")
         
-    #Convert the list of digits into their month abbrev. forms
-    for k in range(last_yr_months):
-        target_month_text = datetime.date(1, int(month_list_digits[k]), 1).strftime('%b')
-        last_12_months.append(str(target_month_text) + " " + str(last_year))
-                
-    for m in range(current_month):
-        target_month_text = datetime.date(current_year, int(month_list_digits[last_yr_months+m]), 1).strftime('%b')
-        last_12_months.append(str(target_month_text) + " " + str(current_year))
-            
-    return last_12_months
+        # append the date object into a list of reverse order from current date:
+        prev_12_months.append(data_point)
+        
+        counter += 1 # track data points plotted, to stop populating when 6 reached.
+        if counter >= 13:
+            prev_12_months.reverse()
+            return prev_12_months
+    return 
+
 
 def fetch6mXAxis():
-    last_6_months = [] #final list of months to pass to Tommy's chart
-    month_list_digits = [] #temp buffer to create list of months.     
-    last_yr_months = (12 - current_month)
-
-    
-    if current_month <= 6:
-        last_yr_months = (6 - current_month)
-
-    #create a list of months in digit form: 
-    if current_month > 6:
-        for i in range(7):
-            month_list_digits.insert(0, (current_month-i))
-            
-    elif current_month <= 6:
-        last_yr_months = (6 - current_month)
-
-        #create a list counting backwards from current month
-        for i in range(current_month):
-            month_list_digits.insert(0, (current_month-i))
-                
-        #Adding months from last year:
-        for j in range(12, (12 - last_yr_months), -1):
-            month_list_digits.insert(0, j)
-            
-    #Convert the list of digits into their month abbrev. forms
-    #prev months first: 
-    for k in range(last_yr_months):
-        target_month_text = datetime.date(last_year, int(month_list_digits[k]), 1).strftime("%d %b, %Y")
-        last_6_months.append(str(target_month_text))
-
-        target_month_text = datetime.date(last_year, int(month_list_digits[k]), 15).strftime("%d %b, %Y")
-        last_6_months.append(str(target_month_text))
-
-                
-    for m in range(last_yr_months, 6, 1):
-        target_month_text = datetime.date(1, int(month_list_digits[m]), 1).strftime('%b')
+    #set start and end dates, from JS data.     
+    prev_6_months = []
+    counter = 0 
+    # use bolton syntax stepping to create a list of months - 6 items, from current month backwards. 
+    for month in timeutils.daterange(DATETIME_NOW, None, step=(0, -1, 0), inclusive=True):
+        # convert the list item to human readable format, with strptime(): 
+        data_point = month.strftime("%d %b, %Y")
+        prev_6_months.append(data_point)
         
-        target_month_text = datetime.date(current_year, int(month_list_digits[m]), 1).strftime("%d %b, %Y")
-        last_6_months.append(str(target_month_text))
+        counter += 1 # track data points plotted, to stop populating when 6 reached. 
+        if counter >= 6:
+            prev_6_months.reverse()
+            return prev_6_months
+    return 
 
-        target_month_text = datetime.date(current_year, int(month_list_digits[m]), 15).strftime("%d %b, %Y")
-        last_6_months.append(str(target_month_text))
-            
-    return last_6_months
-    
 def fetch3mXAxis():
-    last_3_months = [] #final list of months to pass to Tommy's chart
-    month_list_digits = [] #temp buffer to create list of months.
-    last_yr_months = (12 - current_month)     
+    """
+    Automatically fetch x-axis for 3 month graph, working backwards in 15 day intervals. 
+    """
+    prev_3_months = []
+    counter = 0 
     
-    if current_month <= 3:
-        last_yr_months = (3 - current_month)
-
-    #create a list of months in digit form: 
-    if current_month >= 3:
-        for i in range(4):
-            month_list_digits.insert(0, (current_month-i))
-            
-    elif current_month < 3:
-        last_yr_months = (3 - current_month)
-
-        #create a list counting backwards from current month
-        for i in range(current_month):
-            month_list_digits.insert(0, (current_month-i))
-            
-        #Adding months from last year: 
-        for j in range(12, (12 - last_yr_months), -1):
-            month_list_digits.insert(0, j)
+    for month in timeutils.daterange(DATETIME_NOW, None, step=(0, 0, -15), inclusive=True):
+        data_point = month.strftime("%d %b, %Y") # format iso format into human-readable. 
+        prev_3_months.append(data_point)
         
-    #Convert the list of digits into their month abbrev. forms
-    for k in range(3):
-        #code to change montListDigits to have the full correct date incl. year:
-        #if month is Dec or Nov, it's from last year: 
-        if month_list_digits[k] >= 11: 
-            target_month_text = datetime.date(1, int(month_list_digits[k]), 1).strftime('%b')
-            last_3_months.append(str(target_month_text) + " 01, " + str(last_year))
-            last_3_months.append(str(target_month_text) + " 15, " + str(last_year))
-
-        else: 
-            target_month_text = datetime.date(1, int(month_list_digits[k]), 1).strftime('%b')
-            last_3_months.append(str(target_month_text) + " 01, " + str(current_year))
-            last_3_months.append(str(target_month_text) + " 15, " + str(current_year))
-            
-    return last_3_months
+        counter += 1 # track data points plotted, to stop populating when 6 reached. 
+        if counter >= 6:
+            prev_3_months.reverse()
+            return prev_3_months
+    return 
+   
 
 @app.route('/volume_analysis', methods=["POST"])
 def volume_analysis():
@@ -272,7 +216,6 @@ def validate_CSV(file_name, type):
     This function checks that the uploaded file is:
      - A text/CSV file
      - of correct header format and length, for the respective chosen file type
-
      
     """
     print("Type is: ", type)
