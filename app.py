@@ -273,16 +273,14 @@ def process_weight_log():
         - These JSON files will be backed up on the file system to operate as a "snapshot". 
         - Eventually, these snapshots will be viewable, and recoverable.         
     """
-    #TODO: Might need to revisit after working on sessions and user authentication. 
-    #NOTE: This function will delete existing copies of the json file, so insert a backup function before proceeding
-
-    #Create a JSON file to populate in the archive folder, 
-    #TODO: Upload to/create within folder according to username
-    file_name = "weight_history_log.json"
+    # Potential-TODO: Might need to revisit after working on sessions and user authentication.   
+    
+    file_name = "weight_history_log.json" # <----------- FIX
     weight_history = {}
+    
     archive_file_location = os.path.join(app.config['LOG_ARCHIVE'], file_name)
 
-    #create/overwrite the existing json log file. 
+    #create/overwrite the existing json log file -- this create the file under name of "archive_file_location" 
     with open(archive_file_location, 'w', encoding="utf-8") as weight_history_log:
         weight_history_log.write(json.dumps(weight_history))
 
@@ -301,16 +299,14 @@ def process_weight_log():
     file_suffix = ".csv"
     date_list = {} 
 
-
     for item in weight_logs_directory: 
         sliced_filename = item[item.index("202"):item.index(".csv")] #index between year and csv (inclusive of year but not csv)
         unformatted_date = datetime.strptime(sliced_filename, input_format)
         iso_date = unformatted_date.strftime(output_iso_format)
         date_list[sliced_filename] = iso_date
 
-
     most_recent_date = str(max(date_list)) # use value (date in iso) for max, but pass in the key (date in file's format) to variable
-
+          
     #Open and parse target file, creating a python dictionary of {date:weight} 
     drop_columns = ["Time", "Measurement", "Unit", "Comment"]
 
@@ -322,16 +318,22 @@ def process_weight_log():
     print(cleaned_df)
     parsed_json_output= cleaned_df.to_json(orient='split') #argument to convert output to json string
 
+    # TODO: Create variable naming logic for JSON file of extracted weight log. Should include name + latest date entry. 
+    # Find the date of the latest entry
+    clean_log = json.loads(parsed_json_output)
+    print(f"Clean_log after json.loads = {clean_log}")
+    for data in clean_log:
+        print(data)
+    
+    
+    
+    # Check username (pass from the calling function?)
+    
+    # Potential check for existing file logic - otherwise can just overwrite.     
+    
+    #Write the json string to file: 
     with open(archive_file_location, 'w', encoding="utf-8") as weight_history_log:
         weight_history_log.write(json.dumps(parsed_json_output))
-
-
-
-    
-    #use json.dumps() to convert python object into JSON object -- write this to the file. 
-
-
-    
     return "Entered process_csv."
 
 
