@@ -1,13 +1,11 @@
 import os
 import datetime
+import calendar
+import sqlite3
 import json
 import pandas as pd
 
-
-from datetime import date
 from datetime import datetime
-from boltons import timeutils
-
 from flask import Flask, flash, redirect, render_template, request, session, jsonify
 from flask_session import Session
 from json import loads, dumps
@@ -38,15 +36,10 @@ VALID_EXTENSIONS = ('.csv', '.txt', '.CSV', '.TXT')
 #current time/date: 
 CURRENT_TIME_DATE = datetime.now()
 
-
 #return the current month as a digit
 current_month = int(CURRENT_TIME_DATE.strftime("%m")) #%m prints month as digit
 current_year = int(CURRENT_TIME_DATE.strftime("%Y")) #e.g 2013, 2019 etc.
-current_day = int(CURRENT_TIME_DATE.strftime("%-d")) #e.g 1, 17, 31 etc. 
-last_year = int(current_year) - 1
-
-DATETIME_NOW = date(current_year, current_month, current_day) # use previous variables to build dateobject
-
+last_year = current_year - 1
 
 
 @app.route('/', methods=["GET", "POST"])
@@ -92,58 +85,121 @@ def raymond():
     
 
 def fetch12mXAxis():
-    #set start and end dates, from JS data. 
-    last_year = int(current_year) - 1
-    
-    prev_12_months = []
-    counter = 0 
-    for month in timeutils.daterange(DATETIME_NOW, None, step=(0, -1, 0), inclusive=True):
-        # convert the list item to human readable format, with strptime(): 
-        data_point = month.strftime("%d %b, %Y")
-        
-        # append the date object into a list of reverse order from current date:
-        prev_12_months.append(data_point)
-        
-        counter += 1 # track data points plotted, to stop populating when 6 reached.
-        if counter >= 13:
-            prev_12_months.reverse()
-            return prev_12_months
-    return 
+    last_12_months = [] #final list of months to pass to Tommy's chart
+    month_list_digits = [] #temp buffer to create list of months. 
+    last_yr_months = (12 - current_month)
 
+
+    #create a list of months in digit form: 
+    if current_month == 12:
+        month_list_digits = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+    
+    elif current_month < 12:
+        #create a list counting backwards from current month
+        for i in range(current_month):
+            month_list_digits.insert(0, (current_month - i))
+            
+        #Adding months from last year: 
+        for j in range(12, (12 - last_yr_months), -1):
+            month_list_digits.insert(0, j)
+        
+    #Convert the list of digits into their month abbrev. forms
+    for k in range(last_yr_months):
+        target_month_text = datetime.date(1, int(month_list_digits[k]), 1).strftime('%b')
+        last_12_months.append(str(target_month_text) + " " + str(last_year))
+                
+    for m in range(current_month):
+        target_month_text = datetime.date(current_year, int(month_list_digits[last_yr_months+m]), 1).strftime('%b')
+        last_12_months.append(str(target_month_text) + " " + str(current_year))
+            
+    return last_12_months
 
 def fetch6mXAxis():
-    #set start and end dates, from JS data.     
-    prev_6_months = []
-    counter = 0 
-    # use bolton syntax stepping to create a list of months - 6 items, from current month backwards. 
-    for month in timeutils.daterange(DATETIME_NOW, None, step=(0, -1, 0), inclusive=True):
-        # convert the list item to human readable format, with strptime(): 
-        data_point = month.strftime("%d %b, %Y")
-        prev_6_months.append(data_point)
-        
-        counter += 1 # track data points plotted, to stop populating when 6 reached. 
-        if counter >= 6:
-            prev_6_months.reverse()
-            return prev_6_months
-    return 
+    last_6_months = [] #final list of months to pass to Tommy's chart
+    month_list_digits = [] #temp buffer to create list of months.     
+    last_yr_months = (12 - current_month)
 
-def fetch3mXAxis():
-    """
-    Automatically fetch x-axis for 3 month graph, working backwards in 15 day intervals. 
-    """
-    prev_3_months = []
-    counter = 0 
     
-    for month in timeutils.daterange(DATETIME_NOW, None, step=(0, 0, -15), inclusive=True):
-        data_point = month.strftime("%d %b, %Y") # format iso format into human-readable. 
-        prev_3_months.append(data_point)
+    if current_month <= 6:
+        last_yr_months = (6 - current_month)
+
+    #create a list of months in digit form: 
+    if current_month > 6:
+        for i in range(7):
+            month_list_digits.insert(0, (current_month-i))
+            
+    elif current_month <= 6:
+        last_yr_months = (6 - current_month)
+
+        #create a list counting backwards from current month
+        for i in range(current_month):
+            month_list_digits.insert(0, (current_month-i))
+                
+        #Adding months from last year:
+        for j in range(12, (12 - last_yr_months), -1):
+            month_list_digits.insert(0, j)
+            
+    #Convert the list of digits into their month abbrev. forms
+    #prev months first: 
+    for k in range(last_yr_months):
+        target_month_text = datetime.date(last_year, int(month_list_digits[k]), 1).strftime("%d %b, %Y")
+        last_6_months.append(str(target_month_text))
+
+        target_month_text = datetime.date(last_year, int(month_list_digits[k]), 15).strftime("%d %b, %Y")
+        last_6_months.append(str(target_month_text))
+
+                
+    for m in range(last_yr_months, 6, 1):
+        target_month_text = datetime.date(1, int(month_list_digits[m]), 1).strftime('%b')
         
-        counter += 1 # track data points plotted, to stop populating when 6 reached. 
-        if counter >= 6:
-            prev_3_months.reverse()
-            return prev_3_months
-    return 
-   
+        target_month_text = datetime.date(current_year, int(month_list_digits[m]), 1).strftime("%d %b, %Y")
+        last_6_months.append(str(target_month_text))
+
+        target_month_text = datetime.date(current_year, int(month_list_digits[m]), 15).strftime("%d %b, %Y")
+        last_6_months.append(str(target_month_text))
+            
+    return last_6_months
+    
+def fetch3mXAxis():
+    last_3_months = [] #final list of months to pass to Tommy's chart
+    month_list_digits = [] #temp buffer to create list of months.
+    last_yr_months = (12 - current_month)     
+    
+    if current_month <= 3:
+        last_yr_months = (3 - current_month)
+
+    #create a list of months in digit form: 
+    if current_month >= 3:
+        for i in range(4):
+            month_list_digits.insert(0, (current_month-i))
+            
+    elif current_month < 3:
+        last_yr_months = (3 - current_month)
+
+        #create a list counting backwards from current month
+        for i in range(current_month):
+            month_list_digits.insert(0, (current_month-i))
+            
+        #Adding months from last year: 
+        for j in range(12, (12 - last_yr_months), -1):
+            month_list_digits.insert(0, j)
+        
+    #Convert the list of digits into their month abbrev. forms
+    for k in range(3):
+        #code to change montListDigits to have the full correct date incl. year:
+        #if month is Dec or Nov, it's from last year: 
+        if month_list_digits[k] >= 11: 
+            target_month_text = datetime.date(1, int(month_list_digits[k]), 1).strftime('%b')
+            last_3_months.append(str(target_month_text) + " 01, " + str(last_year))
+            last_3_months.append(str(target_month_text) + " 15, " + str(last_year))
+
+        else: 
+            target_month_text = datetime.date(1, int(month_list_digits[k]), 1).strftime('%b')
+            last_3_months.append(str(target_month_text) + " 01, " + str(current_year))
+            last_3_months.append(str(target_month_text) + " 15, " + str(current_year))
+            
+    return last_3_months
 
 @app.route('/volume_analysis', methods=["POST"])
 def volume_analysis():
@@ -216,10 +272,9 @@ def validate_CSV(file_name, type):
     This function checks that the uploaded file is:
      - A text/CSV file
      - of correct header format and length, for the respective chosen file type
+
      
-    """
-    print("Type is: ", type)
-    
+    """    
     if type == "training": 
         #set location of file: 
         file_location = os.path.join(app.config['TRAINING_LOG_FOLDER'], file_name)
@@ -273,14 +328,16 @@ def process_weight_log():
         - These JSON files will be backed up on the file system to operate as a "snapshot". 
         - Eventually, these snapshots will be viewable, and recoverable.         
     """
-    # Potential-TODO: Might need to revisit after working on sessions and user authentication.   
-    
-    file_name = "weight_history_log.json" # <----------- FIX
-    weight_history = {}
-    
-    archive_file_location = os.path.join(app.config['LOG_ARCHIVE'], file_name)
+    #TODO: Might need to revisit after working on sessions and user authentication. 
+    #NOTE: This function will delete existing copies of the json file, so insert a backup function before proceeding
 
-    #create/overwrite the existing json log file -- this create the file under name of "archive_file_location" 
+    #Create a JSON file to populate in the archive folder, 
+    #TODO: Upload to/create within folder according to username
+    temp_file = "temp_processing.json"
+    weight_history = {}
+    archive_file_location = os.path.join(app.config['LOG_ARCHIVE'], temp_file)
+
+    #create temp file the existing json log file. 
     with open(archive_file_location, 'w', encoding="utf-8") as weight_history_log:
         weight_history_log.write(json.dumps(weight_history))
 
@@ -299,41 +356,56 @@ def process_weight_log():
     file_suffix = ".csv"
     date_list = {} 
 
+
     for item in weight_logs_directory: 
         sliced_filename = item[item.index("202"):item.index(".csv")] #index between year and csv (inclusive of year but not csv)
         unformatted_date = datetime.strptime(sliced_filename, input_format)
         iso_date = unformatted_date.strftime(output_iso_format)
         date_list[sliced_filename] = iso_date
 
-    most_recent_date = str(max(date_list)) # use value (date in iso) for max, but pass in the key (date in file's format) to variable
-          
+
+    latest_fitnotes_file = str(max(date_list)) # use value (date in iso) for max, but pass in the key (date in file's format) to variable
+
     #Open and parse target file, creating a python dictionary of {date:weight} 
     drop_columns = ["Time", "Measurement", "Unit", "Comment"]
 
-    filename = f"{file_prefix}{most_recent_date}{file_suffix}"
-    print(f"file name restored:{filename}")
+    # build file name using the date of the most recent submitted fitnotes sheet
+    filename = f"{file_prefix}{latest_fitnotes_file}{file_suffix}"
     df = pd.read_csv(app.config['WEIGHT_LOG_FOLDER']+filename)
 
+    # use pandas to extract log entry dates and weights
     cleaned_df = df.drop(drop_columns, axis='columns')
-    print(cleaned_df)
-    parsed_json_output= cleaned_df.to_json(orient='split') #argument to convert output to json string
+    parsed_entries_string= cleaned_df.to_json(orient='split') #argument to convert output to json string
 
-    # TODO: Create variable naming logic for JSON file of extracted weight log. Should include name + latest date entry. 
-    # Find the date of the latest entry
-    clean_log = json.loads(parsed_json_output)
-    print(f"Clean_log after json.loads = {clean_log}")
-    for data in clean_log:
-        print(data)
+    # load that data into a string of dates. 
+    loaded_entries = json.loads(parsed_entries_string)
+    log_entry_data = loaded_entries["data"]
+    log_entry_dates = []
+
+    for item in log_entry_data:
+        log_entry_dates.append(item[0])
+    print(f"{log_entry_dates}")
+
+    # take the last date entry as the most recent one -- create final output file name:
+    latest_entry_date = log_entry_dates[len(log_entry_dates)-1]
+
+    output_filename = f"WeightLog_username_up_to_{latest_entry_date}"
+    output_filepath = os.path.join(app.config['LOG_ARCHIVE'], output_filename)
+
+    with open(output_filepath, 'w', encoding="utf-8") as final_json_output:
+        final_json_output.write(json.dumps(parsed_entries_string))
+
+    # with open(archive_file_location, 'w', encoding="utf-8") as weight_history_log:
+    # weight_history_log.write(json.dumps(weight_history))
+
+
+
+
     
+    #use json.dumps() to convert python object into JSON object -- write this to the file. 
+
+
     
-    
-    # Check username (pass from the calling function?)
-    
-    # Potential check for existing file logic - otherwise can just overwrite.     
-    
-    #Write the json string to file: 
-    with open(archive_file_location, 'w', encoding="utf-8") as weight_history_log:
-        weight_history_log.write(json.dumps(parsed_json_output))
     return "Entered process_csv."
 
 
