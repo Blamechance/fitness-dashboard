@@ -335,10 +335,10 @@ def process_weight_log():
     #TODO: Upload to/create within folder according to username
     temp_file = "temp_processing.json"
     weight_history = {}
-    archive_file_location = os.path.join(app.config['LOG_ARCHIVE'], temp_file)
+    temp_file_location = os.path.join(app.config['LOG_ARCHIVE'], temp_file)
 
     #create temp file the existing json log file. 
-    with open(archive_file_location, 'w', encoding="utf-8") as weight_history_log:
+    with open(temp_file_location, 'w', encoding="utf-8") as weight_history_log:
         weight_history_log.write(json.dumps(weight_history))
 
     #Start processing the CSV's, extracting relevant data into a python dictionary.
@@ -394,18 +394,10 @@ def process_weight_log():
 
     with open(output_filepath, 'w', encoding="utf-8") as final_json_output:
         final_json_output.write(json.dumps(parsed_entries_string))
-
-    # with open(archive_file_location, 'w', encoding="utf-8") as weight_history_log:
-    # weight_history_log.write(json.dumps(weight_history))
-
-
-
-
     
-    #use json.dumps() to convert python object into JSON object -- write this to the file. 
+    # clean up temp file and return:
+    os.remove(temp_file_location)
 
-
-    
     return "Entered process_csv."
 
 
