@@ -90,58 +90,120 @@ def nathan():
 @app.route('/raymond', methods=["GET", "POST"])
 def raymond():
     return render_template("raymond.html") 
-    
+
+
+
+
+def fetch_days_in_month(input_month):
+
+    MONTHS_WITH_31_DAYS = [1, 3, 5, 7, 8, 10, 12]  # January, March, May, July, August, October, December
+    MONTHS_WITH_30_DAYS = [4, 6, 9, 11]  # April, June, September, November
+
+    if input_month in MONTHS_WITH_30_DAYS:
+        return 30
+    elif input_month in MONTHS_WITH_31_DAYS:
+        return 31
+    return 28
+
 
 def fetch12mXAxis():
     prev_12_months = []
-    counter = 0 
-    for month in timeutils.daterange(DATETIME_NOW, None, step=(0, -1, 0), inclusive=True):
-        # convert the list item to human readable format, with strptime(): 
-        data_point = month.strftime("%d %b, %Y")
+
+    target_day = fetch_days_in_month(current_day)
+    target_month = int(current_month)
+    target_year= int(current_year)
+
+    # append the first date to list, i.e, today. 
+    new_date = date(target_year, target_month, target_day)
+    data_point = new_date.strftime("%d %b, %Y")
+    prev_12_months.append(data_point)
+    counter = 1 
+
+    while counter < 12: # if month is Jan, decrement to prev year Dec
+        if target_month == 1:
+            target_month = 12
+            target_year = target_year - 1
         
-        # append the date object into a list of reverse order from current date:
-        prev_12_months.append(data_point)
-        
-        counter += 1 # track data points plotted, to stop populating when 6 reached.
-        if counter >= 13:
-            prev_12_months.reverse()
-            return prev_12_months
-    return 
+        target_month -= 1 # otherwise, just decrement month value
+        prev_month_days_in_month = fetch_days_in_month(target_month)
+
+        #create prev month's datetimeobject and append to list
+        new_date = date(target_year, target_month, prev_month_days_in_month)
+        new_axis_tick = new_date.strftime("%d %b, %Y")
+        prev_12_months.append(new_axis_tick)
+
+        counter += 1 
+
+    prev_12_months.reverse()
+    return prev_12_months
+
+
 
 
 def fetch6mXAxis():
-    #set start and end dates, from JS data.     
     prev_6_months = []
-    counter = 0 
-    # use bolton syntax stepping to create a list of months - 6 items, from current month backwards. 
-    for month in timeutils.daterange(DATETIME_NOW, None, step=(0, -1, 0), inclusive=True):
-        # convert the list item to human readable format, with strptime(): 
-        data_point = month.strftime("%d %b, %Y")
-        prev_6_months.append(data_point)
+
+    target_day = fetch_days_in_month(current_day)
+    target_month = int(current_month)
+    target_year= int(current_year)
+
+    # append the first date to list, i.e, today. 
+    new_date = date(target_year, target_month, target_day)
+    data_point = new_date.strftime("%d %b, %Y")
+    prev_6_months.append(data_point)
+    counter = 1 
+ 
+
+    while counter < 12: # if month is Jan, decrement to prev year Dec
+        if target_month == 1:
+            target_month = 12
+            target_year = target_year - 1
         
-        counter += 1 # track data points plotted, to stop populating when 6 reached. 
-        if counter >= 6:
-            prev_6_months.reverse()
-            return prev_6_months
-    return 
+        target_month -= 1 # otherwise, just decrement month value
+        prev_month_days_in_month = fetch_days_in_month(target_month)
+
+        #create prev month's datetimeobject and append to list
+        new_date = date(target_year, target_month, prev_month_days_in_month)
+        new_axis_tick = new_date.strftime("%d %b, %Y")
+        prev_6_months.append(new_axis_tick)
+
+        counter += 1 
+
+    prev_6_months.reverse()
+    return prev_6_months
+
 
 def fetch3mXAxis():
-    """
-    Automatically fetch x-axis for 3 month graph, working backwards in 15 day intervals. 
-    """
     prev_3_months = []
-    counter = 0 
-    
-    for month in timeutils.daterange(DATETIME_NOW, None, step=(0, 0, -15), inclusive=True):
-        data_point = month.strftime("%d %b, %Y") # format iso format into human-readable. 
-        prev_3_months.append(data_point)
+
+    target_day = fetch_days_in_month(current_day)
+    target_month = int(current_month)
+    target_year= int(current_year)
+
+    # append the first date to list, i.e, today. 
+    new_date = date(target_year, target_month, target_day)
+    data_point = new_date.strftime("%d %b, %Y")
+    prev_3_months.append(data_point)
+    counter = 1 
+
+    while counter < 12: # if month is Jan, decrement to prev year Dec
+        if target_month == 1:
+            target_month = 12
+            target_year = target_year - 1
         
-        counter += 1 # track data points plotted, to stop populating when 6 reached. 
-        if counter >= 6:
-            prev_3_months.reverse()
-            return prev_3_months
-    return 
-   
+        target_month -= 1 # otherwise, just decrement month value
+        prev_month_days_in_month = fetch_days_in_month(target_month)
+
+        #create prev month's datetimeobject and append to list
+        new_date = date(target_year, target_month, prev_month_days_in_month)
+        new_axis_tick = new_date.strftime("%d %b, %Y")
+        prev_3_months.append(new_axis_tick)
+
+        counter += 1 
+
+    prev_3_months.reverse()
+    return prev_3_months
+
 
 @app.route('/volume_analysis', methods=["POST"])
 def volume_analysis():
