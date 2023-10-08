@@ -48,7 +48,13 @@ last_year = int(current_year) - 1
 DATETIME_NOW = date(current_year, current_month, current_day) # use previous variables to build dateobject
 print(f"DATETIME_NOW = {DATETIME_NOW}")
 
+# test date object: 
+current_month = 2 #%m prints month as digit
+current_year = int(CURRENT_TIME_DATE.strftime("%Y")) #e.g 2013, 2019 etc.
+current_day = 28 #e.g 1, 17, 31 etc. 
+last_year = int(current_year) - 1
 
+DATETIME_NOW = date(current_year, current_month, current_day) # use previous variables to build dateobject
 
 @app.route('/', methods=["GET", "POST"])
 def index():
@@ -108,11 +114,17 @@ def fetch_days_in_month(input_month):
 def fetch12mXAxis():
     prev_12_months = []
 
-    target_day = fetch_days_in_month(current_month)
-    target_month = int(current_month)
+    # Find and append the first date to list, i.e, the last lapsed month, or if today is last day of month, today. : 
+    if current_day == fetch_days_in_month(current_month):
+        target_day = fetch_days_in_month(current_month)
+        target_month = int(current_month)
+        
+    else:
+        target_day = fetch_days_in_month(current_month -1)
+        target_month = int(current_month) -1 
+
     target_year= int(current_year)
 
-    # append the first date to list, i.e, today. 
     new_date = date(target_year, target_month, target_day)
     data_point = new_date.strftime("%d %b, %Y")
     prev_12_months.append(data_point)
@@ -140,46 +152,62 @@ def fetch6mXAxis():
     """ Datetime object to create should be either 15th or last day of month, whichever has most recently lapsed. 
     """
     prev_6_months = []
-    
-    # if current day is greater than 15, set date to last day of month
-    # if it's less or equal to 15, set it to 15
-    if current_day > 15:
-        target_day = 15
-        target_month = int(current_month)
-        
-    else:
-        target_day = fetch_days_in_month(current_month -1)
-        target_month = int(current_month) -1 
-
     target_year= int(current_year)
 
-    # append the first date to list, i.e, today. 
-    new_date = date(target_year, target_month, target_day)
+    # Find and append the first date to list, i.e, the last lapsed month. If today is last day of month, use today:
+    if current_day == fetch_days_in_month(current_month):
+        target_day = fetch_days_in_month(current_month)
+        target_month = int(current_month)
+
+        new_date = date(target_year, target_month, target_day)
+        target_day = 15
+        
+    elif current_day >= 15: # if it's greater than or equal to 15 (but not yet last date of month), set it to 15
+        target_day = 15
+        target_month = int(current_month)
+        new_date = date(target_year, target_month, target_day)
+        
+        target_day = fetch_days_in_month(current_month-1)
+        target_month = int(current_month-1)
+
+    else:   # if current day is less than 15, set date to last day of prev month
+        target_day = fetch_days_in_month(current_month-1)
+        target_month = int(current_month-1)
+        new_date = date(target_year, target_month, target_day)
+
     data_point = new_date.strftime("%d %b, %Y")
     prev_6_months.append(data_point)
     counter = 1 
  
 
     while counter < 12: # Decrement datetime object, for next axis tick: 
-        """ it's skipping months when using the 15th in datetime object
-        """
         if target_month <= 1 and target_day == 15: # if date is Jan 15th, decrement to prev year Dec 31st
             target_month = 12
             target_year = target_year - 1
             target_day = 31
             new_date = date(target_year, target_month, target_day)
+
+        elif target_day == fetch_days_in_month(target_month):
+            new_date = date(target_year, target_month, target_day)
+            target_day = 15
             
-        elif target_day > 15: # if date is after 15th of month, set date to 15th of same month. 
+            
+        elif target_day >= 15: # if date is after 15th of month, set date to 15th of same month. 
             target_day = 15
             new_date = date(target_year, target_month, target_day)
-            target_month -= 1 # decrement month for next iteration            
+            
+            if target_month == 1:
+                target_month = 12
+            else:
+                target_month -= 1 # decrement month for next iteration   
+            target_day = fetch_days_in_month(target_month)         
             
         else: # else, if prior to month midpoint, set to last date of last month. 
             target_day = fetch_days_in_month(target_month)
+            target_month -= 1 # decrement month for next iteration            
             new_date = date(target_year, target_month, target_day)
             
         #create target month's datetimeobject and append to list
-        print(f"Prior to creating object: {target_year}{target_month}{target_day}")
         new_axis_tick = new_date.strftime("%d %b, %Y")
         prev_6_months.append(new_axis_tick)
 
@@ -188,7 +216,20 @@ def fetch6mXAxis():
     prev_6_months.reverse()
     return prev_6_months
 
-
+def closest_date_fact_7(input_date, input_month):
+    exact_match = [7,14,21]
+    if input_date in exact_match:
+        return input_date
+    if input_date == fetch_days_in_month(input_month):
+        return input_date
+    
+    if input_date < 7:
+        return fetch_days_in_month(input_month-1)
+    if input_date < 14:
+        return 7
+    if input_date < 21:
+        return 14
+    return 21 #else, if in last stretch of month, just return the last date. 
 
 
 def fetch3mXAxis():
@@ -197,45 +238,75 @@ def fetch3mXAxis():
     """
 
     prev_3_months = []
-     # if current day is greater than 15, set date to last day of month
-    # if it's less or equal to 15, set it to 15
-    if current_day > 15:
-        target_day = 15
-        target_month = int(current_month)
-        
-    else:
-        target_day = fetch_days_in_month(current_month -1)
-        target_month = int(current_month) -1 
-
     target_year= int(current_year)
 
-    # append the first date to list, i.e, today. 
-    new_date = date(target_year, target_month, target_day)
-    data_point = new_date.strftime("%d %b, %Y")
-    prev_3_months.append(data_point)
+    # Find and append the first date to list, i.e, the last lapsed month, or if today is last day of month, today:
+    if current_day == fetch_days_in_month(current_month):
+        target_day = fetch_days_in_month(current_month)
+        target_month = int(current_month)
+        new_date = date(target_year, target_month, target_day)
+
+        target_day = 21
+
+    elif current_day == 7 and current_month == 1:
+        target_day = 31
+        target_month = 12
+        target_year -= 1
+
+    elif current_day == 7:
+        target_day = current_month
+        target_month = current_month
+
+        new_date = date(target_year, current_month, current_day)
+        target_month -= 1
+        target_day = fetch_days_in_month(current_month-1)
+
+    # REMEMBER JAN EDGE CASE
+
+    else: #else, set to closest fact 7 date. 
+        target_day = closest_date_fact_7(current_day, current_month)
+        target_month = int(current_month)
+        new_date = date(target_year, target_month, target_day)
+        
+        target_day -= 7 # <-------- not assigning to variable? 
+        print(f"first date append 3m: {target_day}")
+
+    print(f"date before appending first time: {target_year} - {target_month} - {target_day}")
+    new_axis_tick = new_date.strftime("%d %b, %Y")
+    prev_3_months.append(new_axis_tick)
     counter = 1 
  
 
     while counter < 12: # Decrement datetime object, for next axis tick: 
         """ it's skipping months when using the 15th in datetime object
         """
-        if target_month <= 1 and target_day == 15: # if date is Jan 15th, decrement to prev year Dec 31st
+        if target_month <= 1 and target_day == 7: # if date is Jan 7th, decrement to prev year Dec 31st
             target_month = 12
             target_year = target_year - 1
             target_day = 31
             new_date = date(target_year, target_month, target_day)
-            
-        elif target_day > 15: # if date is after 15th of month, set date to 15th of same month. 
-            target_day = 15
+        
+        elif target_day == 7:
             new_date = date(target_year, target_month, target_day)
-            target_month -= 1 # decrement month for next iteration            
+            target_day -= 8
             
-        else: # else, if prior to month midpoint, set to last date of last month. 
+        elif target_day < 7: #if 7th of any other month, decrement to last date of prev month. 
+            target_month -= 1
             target_day = fetch_days_in_month(target_month)
             new_date = date(target_year, target_month, target_day)
-            
+            target_day = fetch_days_in_month(target_month-1)
+        
+        else: #else, decrement to closest date that is factor of 7. 
+            target_day = closest_date_fact_7(target_day, target_month)
+            new_date = date(target_year, target_month, target_day)
+
+            if target_day <= 7: 
+                target_day = fetch_days_in_month(target_month-1)
+                target_month = target_month-1
+            else: 
+                target_day -= 7
+
         #create target month's datetimeobject and append to list
-        print(f"Prior to creating object: {target_year}{target_month}{target_day}")
         new_axis_tick = new_date.strftime("%d %b, %Y")
         prev_3_months.append(new_axis_tick)
 
