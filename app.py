@@ -134,6 +134,7 @@ def fetch12mXAxis():
         if target_month == 1: # if month is Jan, decrement to prev year Dec
             target_month = 12
             target_year = target_year - 1
+            target_month += 1
         
         target_month -= 1 # otherwise, just decrement month value and take last day of month to list:
         new_date = date(target_year, target_month, fetch_days_in_month(target_month))
@@ -161,6 +162,7 @@ def fetch6mXAxis():
 
         new_date = date(target_year, target_month, target_day)
         target_day = 15
+    
         
     elif current_day >= 15: # if it's greater than or equal to 15 (but not yet last date of month), set it to 15
         target_day = 15
@@ -186,11 +188,17 @@ def fetch6mXAxis():
             target_year = target_year - 1
             target_day = 31
             new_date = date(target_year, target_month, target_day)
+            target_day = 15
 
         elif target_day == fetch_days_in_month(target_month):
             new_date = date(target_year, target_month, target_day)
             target_day = 15
-            
+        
+        elif target_day == 15 and target_month == 1:
+            new_date = date(target_year, target_month, target_day)
+            target_month = 12
+            target_year -= 1
+
             
         elif target_day >= 15: # if date is after 15th of month, set date to 15th of same month. 
             target_day = 15
@@ -261,8 +269,6 @@ def fetch3mXAxis():
         target_month -= 1
         target_day = fetch_days_in_month(current_month-1)
 
-    # REMEMBER JAN EDGE CASE
-
     else: #else, set to closest fact 7 date. 
         target_day = closest_date_fact_7(current_day, current_month)
         target_month = int(current_month)
@@ -285,6 +291,7 @@ def fetch3mXAxis():
             target_year = target_year - 1
             target_day = 31
             new_date = date(target_year, target_month, target_day)
+            target_day -= 7
         
         elif target_day == 7:
             new_date = date(target_year, target_month, target_day)
