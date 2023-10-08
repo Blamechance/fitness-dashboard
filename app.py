@@ -49,9 +49,9 @@ DATETIME_NOW = date(current_year, current_month, current_day) # use previous var
 print(f"DATETIME_NOW = {DATETIME_NOW}")
 
 # test date object: 
-current_month = 2 #%m prints month as digit
+current_month = 1 #%m prints month as digit
 current_year = int(CURRENT_TIME_DATE.strftime("%Y")) #e.g 2013, 2019 etc.
-current_day = 28 #e.g 1, 17, 31 etc. 
+current_day = 2 #e.g 1, 17, 31 etc. 
 last_year = int(current_year) - 1
 
 DATETIME_NOW = date(current_year, current_month, current_day) # use previous variables to build dateobject
@@ -184,22 +184,15 @@ def fetch6mXAxis():
 
     while counter < 12: # Decrement datetime object, for next axis tick: 
         if target_month <= 1 and target_day == 15: # if date is Jan 15th, decrement to prev year Dec 31st
+            new_date = date(target_year, target_month, target_day)
             target_month = 12
             target_year = target_year - 1
             target_day = 31
-            new_date = date(target_year, target_month, target_day)
-            target_day = 15
 
         elif target_day == fetch_days_in_month(target_month):
             new_date = date(target_year, target_month, target_day)
             target_day = 15
         
-        elif target_day == 15 and target_month == 1:
-            new_date = date(target_year, target_month, target_day)
-            target_month = 12
-            target_year -= 1
-
-            
         elif target_day >= 15: # if date is after 15th of month, set date to 15th of same month. 
             target_day = 15
             new_date = date(target_year, target_month, target_day)
