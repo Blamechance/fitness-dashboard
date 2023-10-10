@@ -48,14 +48,6 @@ last_year = int(current_year) - 1
 DATETIME_NOW = date(current_year, current_month, current_day) # use previous variables to build dateobject
 print(f"DATETIME_NOW = {DATETIME_NOW}")
 
-# test date object: 
-current_month = 1 #%m prints month as digit
-current_year = int(CURRENT_TIME_DATE.strftime("%Y")) #e.g 2013, 2019 etc.
-current_day = 2 #e.g 1, 17, 31 etc. 
-last_year = int(current_year) - 1
-
-DATETIME_NOW = date(current_year, current_month, current_day) # use previous variables to build dateobject
-
 @app.route('/', methods=["GET", "POST"])
 def index():
     return render_template("index.html") 
@@ -113,17 +105,19 @@ def fetch_days_in_month(input_month):
 
 def fetch12mXAxis():
     prev_12_months = []
+    target_month = int(current_month)
+    target_year= int(current_year)
+    target_day = fetch_days_in_month(current_month)
 
     # Find and append the first date to list, i.e, the last lapsed month, or if today is last day of month, today. : 
-    if current_day == fetch_days_in_month(current_month):
-        target_day = fetch_days_in_month(current_month)
-        target_month = int(current_month)
         
+    if target_month == 1:
+        target_month = 12
+        target_year = target_year - 1
+            
     else:
         target_day = fetch_days_in_month(current_month -1)
         target_month = int(current_month) -1 
-
-    target_year= int(current_year)
 
     new_date = date(target_year, target_month, target_day)
     data_point = new_date.strftime("%d %b, %Y")
@@ -148,39 +142,14 @@ def fetch12mXAxis():
 
 
 
-
 def fetch6mXAxis():
     """ Datetime object to create should be either 15th or last day of month, whichever has most recently lapsed. 
     """
     prev_6_months = []
     target_year= int(current_year)
-
-    # Find and append the first date to list, i.e, the last lapsed month. If today is last day of month, use today:
-    if current_day == fetch_days_in_month(current_month):
-        target_day = fetch_days_in_month(current_month)
-        target_month = int(current_month)
-
-        new_date = date(target_year, target_month, target_day)
-        target_day = 15
-    
-        
-    elif current_day >= 15: # if it's greater than or equal to 15 (but not yet last date of month), set it to 15
-        target_day = 15
-        target_month = int(current_month)
-        new_date = date(target_year, target_month, target_day)
-        
-        target_day = fetch_days_in_month(current_month-1)
-        target_month = int(current_month-1)
-
-    else:   # if current day is less than 15, set date to last day of prev month
-        target_day = fetch_days_in_month(current_month-1)
-        target_month = int(current_month-1)
-        new_date = date(target_year, target_month, target_day)
-
-    data_point = new_date.strftime("%d %b, %Y")
-    prev_6_months.append(data_point)
-    counter = 1 
- 
+    target_day = fetch_days_in_month(current_month)
+    target_month = int(current_month)
+    counter = 0 
 
     while counter < 12: # Decrement datetime object, for next axis tick: 
         if target_month <= 1 and target_day == 15: # if date is Jan 15th, decrement to prev year Dec 31st
@@ -217,68 +186,32 @@ def fetch6mXAxis():
     prev_6_months.reverse()
     return prev_6_months
 
-def closest_date_fact_7(input_date, input_month):
-    exact_match = [7,14,21]
-    if input_date in exact_match:
-        return input_date
-    if input_date == fetch_days_in_month(input_month):
-        return input_date
-    
-    if input_date < 7:
-        return fetch_days_in_month(input_month-1)
-    if input_date < 14:
-        return 7
-    if input_date < 21:
-        return 14
-    return 21 #else, if in last stretch of month, just return the last date. 
+
 
 
 def fetch3mXAxis():
-    """ Datetime object to create should be either 15th or last day of month, whichever has most recently lapsed. 
-        Current: not yet accounted for january edge case. 
-    """
-
+    def closest_date_fact_7(input_date, input_month):
+        exact_match = [7,14,21]
+        if input_date in exact_match:
+            return input_date
+        if input_date == fetch_days_in_month(input_month):
+            return input_date
+        
+        if input_date < 7:
+            return fetch_days_in_month(input_month-1)
+        if input_date < 14:
+            return 7
+        if input_date < 21:
+            return 14
+        return 21 #else, if in last stretch of month, just return the last date. 
+    
     prev_3_months = []
     target_year= int(current_year)
-
-    # Find and append the first date to list, i.e, the last lapsed month, or if today is last day of month, today:
-    if current_day == fetch_days_in_month(current_month):
-        target_day = fetch_days_in_month(current_month)
-        target_month = int(current_month)
-        new_date = date(target_year, target_month, target_day)
-
-        target_day = 21
-
-    elif current_day == 7 and current_month == 1:
-        target_day = 31
-        target_month = 12
-        target_year -= 1
-
-    elif current_day == 7:
-        target_day = current_month
-        target_month = current_month
-
-        new_date = date(target_year, current_month, current_day)
-        target_month -= 1
-        target_day = fetch_days_in_month(current_month-1)
-
-    else: #else, set to closest fact 7 date. 
-        target_day = closest_date_fact_7(current_day, current_month)
-        target_month = int(current_month)
-        new_date = date(target_year, target_month, target_day)
-        
-        target_day -= 7 # <-------- not assigning to variable? 
-        print(f"first date append 3m: {target_day}")
-
-    print(f"date before appending first time: {target_year} - {target_month} - {target_day}")
-    new_axis_tick = new_date.strftime("%d %b, %Y")
-    prev_3_months.append(new_axis_tick)
-    counter = 1 
+    target_day = fetch_days_in_month(current_month)
+    target_month = int(current_month)
+    counter = 0
  
-
     while counter < 12: # Decrement datetime object, for next axis tick: 
-        """ it's skipping months when using the 15th in datetime object
-        """
         if target_month <= 1 and target_day == 7: # if date is Jan 7th, decrement to prev year Dec 31st
             target_month = 12
             target_year = target_year - 1
