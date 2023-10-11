@@ -46,6 +46,12 @@ current_day = int(CURRENT_TIME_DATE.strftime("%-d")) #e.g 1, 17, 31 etc.
 last_year = int(current_year) - 1
 
 DATETIME_NOW = date(current_year, current_month, current_day) # use previous variables to build dateobject
+
+# Test:
+current_month = 2 #%m prints month as digit
+current_year = 2023 #e.g 2013, 2019 etc.
+current_day = 12 #e.g 1, 17, 31 etc. 
+
 print(f"DATETIME_NOW = {DATETIME_NOW}")
 
 @app.route('/', methods=["GET", "POST"])
@@ -67,18 +73,19 @@ def checkin():
 #Athelete pages - maybe they can share a single function to call? 
 @app.route('/tommy', methods=["GET", "POST"])
 def tommy():
-    #Prepare items to pass to Weight Line Graph:   
+    #Prepare items to pass to Weight Line Graph -- dates on axis + points to plot:   
     x_axis_12 = fetch12mXAxis()
     x_axis_3 = fetch3mXAxis()
     x_axis_6 = fetch6mXAxis()
+
     
-    if request.method == "POST": #POST method indicates user was redirected to function by another. 
-        #Muscle Group Pie Graph:
-        #call volume analysis function -- currently just prints the option:
+    if request.method == "POST": # POST method indicates user was redirected to function by another. 
+        # Muscle Group Pie Graph:
+        # call volume analysis function -- currently just prints the option:
         print("Entering POST method for tommy(): ")
         return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
 
-    else: #GET method indicates user put address to route to the function.  
+    else: # GET method indicates user put address to route to the function.  
         return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
             
 @app.route('/nathan', methods=["GET", "POST"])
@@ -88,8 +95,6 @@ def nathan():
 @app.route('/raymond', methods=["GET", "POST"])
 def raymond():
     return render_template("raymond.html") 
-
-
 
 
 def fetch_days_in_month(input_month):
@@ -107,34 +112,34 @@ def fetch12mXAxis():
     prev_12_months = []
     target_month = int(current_month)
     target_year= int(current_year)
-    target_day = fetch_days_in_month(current_month)
+    target_day = int(current_day)
 
-    # Find and append the first date to list, i.e, the last lapsed month, or if today is last day of month, today. : 
-        
-    if target_month == 1:
-        target_month = 12
-        target_year = target_year - 1
-            
-    else:
-        target_day = fetch_days_in_month(current_month -1)
-        target_month = int(current_month) -1 
-
-    new_date = date(target_year, target_month, target_day)
-    data_point = new_date.strftime("%d %b, %Y")
-    prev_12_months.append(data_point)
-    counter = 1 
+    counter = 0
 
     while counter < 12: 
-        if target_month == 1: # if month is Jan, decrement to prev year Dec
+        if target_month == 1 and target_day < 31: # if month is Jan and not yet 31st, decrement to prev year Dec
             target_month = 12
+            target_day = 31
             target_year = target_year - 1
-            target_month += 1
+            new_date = date(target_year, target_month, fetch_days_in_month(target_month))            
+
+        if target_day == fetch_days_in_month(target_month): #if last date of month, include current month: 
+            new_date = date(target_year, target_month, fetch_days_in_month(target_month))
+            #dec logic in case
+            if target_month == 1: # if month is jan, decrement properly now that object is made. 
+                target_month = 12
+                target_day = 31
+                target_year = target_year - 1
+            else:
+                target_month -= 1
+    
+        else: # if not yet last date of month, use last month: 
+            target_month -= 1
+            target_day = fetch_days_in_month(target_month) 
+            new_date = date(target_year, target_month, fetch_days_in_month(target_month))
         
-        target_month -= 1 # otherwise, just decrement month value and take last day of month to list:
-        new_date = date(target_year, target_month, fetch_days_in_month(target_month))
         new_axis_tick = new_date.strftime("%d %b, %Y")
         prev_12_months.append(new_axis_tick)
-
         counter += 1 
 
     prev_12_months.reverse()
@@ -147,18 +152,20 @@ def fetch6mXAxis():
     """
     prev_6_months = []
     target_year= int(current_year)
-    target_day = fetch_days_in_month(current_month)
+    target_day = int(current_day)
     target_month = int(current_month)
     counter = 0 
 
     while counter < 12: # Decrement datetime object, for next axis tick: 
-        if target_month <= 1 and target_day == 15: # if date is Jan 15th, decrement to prev year Dec 31st
+        if target_month == 1 and target_day == 15: # if date is Jan 15th, decrement to prev year Dec 31st
             new_date = date(target_year, target_month, target_day)
             target_month = 12
             target_year = target_year - 1
             target_day = 31
 
         elif target_day == fetch_days_in_month(target_month):
+            print(f"prev6 so far: {prev_6_months}")
+            print(f"{target_year}-{target_month}-{target_day}")
             new_date = date(target_year, target_month, target_day)
             target_day = 15
         
@@ -170,12 +177,17 @@ def fetch6mXAxis():
                 target_month = 12
             else:
                 target_month -= 1 # decrement month for next iteration   
-            target_day = fetch_days_in_month(target_month)         
+            target_day = fetch_days_in_month(target_month-1)         
             
         else: # else, if prior to month midpoint, set to last date of last month. 
-            target_day = fetch_days_in_month(target_month)
-            target_month -= 1 # decrement month for next iteration            
+            if target_month == 1:
+                target_month = 12
+            else:
+                target_month -= 1 # decrement month for next iteration  
+
+            target_day = fetch_days_in_month(target_month-1)
             new_date = date(target_year, target_month, target_day)
+            target_month -= 1 # decrement month for next iteration            
             
         #create target month's datetimeobject and append to list
         new_axis_tick = new_date.strftime("%d %b, %Y")
@@ -207,28 +219,26 @@ def fetch3mXAxis():
     
     prev_3_months = []
     target_year= int(current_year)
-    target_day = fetch_days_in_month(current_month)
+    target_day = int(current_day)
     target_month = int(current_month)
     counter = 0
  
     while counter < 12: # Decrement datetime object, for next axis tick: 
         if target_month <= 1 and target_day == 7: # if date is Jan 7th, decrement to prev year Dec 31st
+            new_date = date(target_year, target_month, target_day)
             target_month = 12
             target_year = target_year - 1
             target_day = 31
-            new_date = date(target_year, target_month, target_day)
-            target_day -= 7
         
-        elif target_day == 7:
+        elif target_day == fetch_days_in_month(target_month):
             new_date = date(target_year, target_month, target_day)
-            target_day -= 8
-            
-        elif target_day < 7: #if 7th of any other month, decrement to last date of prev month. 
-            target_month -= 1
-            target_day = fetch_days_in_month(target_month)
+            target_day = 21
+
+        elif target_day >= 21:
+            target_day = 21
             new_date = date(target_year, target_month, target_day)
-            target_day = fetch_days_in_month(target_month-1)
-        
+            target_day = 14
+
         else: #else, decrement to closest date that is factor of 7. 
             target_day = closest_date_fact_7(target_day, target_month)
             new_date = date(target_year, target_month, target_day)
@@ -448,6 +458,16 @@ def process_weight_log():
     os.remove(temp_file_location)
 
     return "Entered process_csv."
+
+def fetch_data_weight_graph():
+    pass
+
+    # take as input a list of dates.
+
+    # use averaging logic between points, that will average all weightthat sits between the current log entry, and the next one (not inclusively of the latter)
+
+    # 
+
 
 
 if __name__ == "__main__":
