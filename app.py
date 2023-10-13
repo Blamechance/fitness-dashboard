@@ -47,11 +47,6 @@ last_year = int(current_year) - 1
 
 DATETIME_NOW = date(current_year, current_month, current_day) # use previous variables to build dateobject
 
-# Test:
-current_month = 2 #%m prints month as digit
-current_year = 2023 #e.g 2013, 2019 etc.
-current_day = 12 #e.g 1, 17, 31 etc. 
-
 print(f"DATETIME_NOW = {DATETIME_NOW}")
 
 @app.route('/', methods=["GET", "POST"])
@@ -107,6 +102,7 @@ def fetch_days_in_month(input_month):
         return 31
     return 28
 
+# Following date functions should be refactored to decrement only before commiting a transaction -- currently it's not atomic. 
 
 def fetch12mXAxis():
     prev_12_months = []
@@ -121,22 +117,35 @@ def fetch12mXAxis():
             target_month = 12
             target_day = 31
             target_year = target_year - 1
-            new_date = date(target_year, target_month, fetch_days_in_month(target_month))            
+            new_date = date(target_year, target_month, fetch_days_in_month(target_month))
+
+            # decrement
+            target_month -= 1
+            target_day = fetch_days_in_month(target_day)            
 
         if target_day == fetch_days_in_month(target_month): #if last date of month, include current month: 
             new_date = date(target_year, target_month, fetch_days_in_month(target_month))
-            #dec logic in case
             if target_month == 1: # if month is jan, decrement properly now that object is made. 
                 target_month = 12
                 target_day = 31
                 target_year = target_year - 1
             else:
                 target_month -= 1
+                target_day = fetch_days_in_month(target_month) 
     
         else: # if not yet last date of month, use last month: 
             target_month -= 1
             target_day = fetch_days_in_month(target_month) 
             new_date = date(target_year, target_month, fetch_days_in_month(target_month))
+
+            # decrement: 
+            if target_month == 1: # if month is jan, decrement properly now that object is made. 
+                target_month = 12
+                target_day = 31
+                target_year = target_year - 1
+            else:
+                target_month -= 1
+                target_day = fetch_days_in_month(target_month)     
         
         new_axis_tick = new_date.strftime("%d %b, %Y")
         prev_12_months.append(new_axis_tick)
@@ -154,16 +163,16 @@ def fetch6mXAxis():
     target_year= int(current_year)
     target_day = int(current_day)
     target_month = int(current_month)
-    counter = 0 
+    counter = 0  
 
     while counter < 12: # Decrement datetime object, for next axis tick: 
-        if target_month == 1 and target_day == 15: # if date is Jan 15th, decrement to prev year Dec 31st
+        if target_month == 1 and target_day == 15: # if date is Jan 15th, decrement to prev year Dec 31st / perfect case
             new_date = date(target_year, target_month, target_day)
             target_month = 12
             target_year = target_year - 1
             target_day = 31
 
-        elif target_day == fetch_days_in_month(target_month):
+        elif target_day == fetch_days_in_month(target_month): # perfect case no decrement prior
             print(f"prev6 so far: {prev_6_months}")
             print(f"{target_year}-{target_month}-{target_day}")
             new_date = date(target_year, target_month, target_day)
@@ -175,20 +184,29 @@ def fetch6mXAxis():
             
             if target_month == 1:
                 target_month = 12
+                target_day = fetch_days_in_month(12)         
+
             else:
                 target_month -= 1 # decrement month for next iteration   
-            target_day = fetch_days_in_month(target_month-1)         
+                target_day = fetch_days_in_month(target_month)         
             
         else: # else, if prior to month midpoint, set to last date of last month. 
             if target_month == 1:
                 target_month = 12
+                target_day = fetch_days_in_month(target_month)
+                new_date = date(target_year, target_month, target_day)
             else:
                 target_month -= 1 # decrement month for next iteration  
+                target_day = fetch_days_in_month(target_month)
+                new_date = date(target_year, target_month, target_day)
 
-            target_day = fetch_days_in_month(target_month-1)
-            new_date = date(target_year, target_month, target_day)
-            target_month -= 1 # decrement month for next iteration            
-            
+            if target_month == 1: # decrement for next iteration
+                target_month = 12
+                target_day = fetch_days_in_month(12)         
+
+            else:
+                target_month -= 1 # decrement month for next iteration   
+                target_day = fetch_days_in_month(target_month)               
         #create target month's datetimeobject and append to list
         new_axis_tick = new_date.strftime("%d %b, %Y")
         prev_6_months.append(new_axis_tick)
