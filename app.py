@@ -71,9 +71,8 @@ def tommy():
     #Prepare items to pass to Weight Line Graph -- dates on axis + points to plot:   
     x_axis_12 = fetch12mXAxis()
     x_axis_3 = fetch3mXAxis()
-    x_axis_6 = fetch6mXAxis()
-
-    
+    x_axis_6 = fetch6mXAxis()    
+     
     if request.method == "POST": # POST method indicates user was redirected to function by another. 
         # Muscle Group Pie Graph:
         # call volume analysis function -- currently just prints the option:
@@ -81,6 +80,8 @@ def tommy():
         return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
 
     else: # GET method indicates user put address to route to the function.  
+        print(f"Attempting to call weight graph...")
+        fetch_data_weight_graph()
         return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
             
 @app.route('/nathan', methods=["GET", "POST"])
@@ -173,8 +174,6 @@ def fetch6mXAxis():
             target_day = 31
 
         elif target_day == fetch_days_in_month(target_month): # perfect case no decrement prior
-            print(f"prev6 so far: {prev_6_months}")
-            print(f"{target_year}-{target_month}-{target_day}")
             new_date = date(target_year, target_month, target_day)
             target_day = 15
         
@@ -466,7 +465,7 @@ def process_weight_log():
     # take the last date entry as the most recent one -- create final output file name:
     latest_entry_date = log_entry_dates[len(log_entry_dates)-1]
 
-    output_filename = f"WeightLog_username_up_to_{latest_entry_date}"
+    output_filename = f"WeightLog_username_{latest_entry_date}"
     output_filepath = os.path.join(app.config['LOG_ARCHIVE'], output_filename)
 
     with open(output_filepath, 'w', encoding="utf-8") as final_json_output:
@@ -478,9 +477,32 @@ def process_weight_log():
     return "Entered process_csv."
 
 def fetch_data_weight_graph():
-    pass
+    print("Entered fetch weight graph.")
+    # TODO: Add string input to function for username.  
+    # navigate to folder with logs and search for user's most recent weight log.
+    archive_folder = os.listdir(app.config['LOG_ARCHIVE'])
+    print(f"archive_folder = {archive_folder}")
+    
+    for item in archive_folder:
+        filename_parts = item.split("_")
+        if len(filename_parts) >= 3:
+            extracted_user = filename_parts[1]
+            print(f"Extracted the username from file as: {extracted_user} ")
+        return
+        unformatted_date = datetime.strptime(sliced_filename, input_format)
+        iso_date = unformatted_date.strftime(output_iso_format)
+        date_list[sliced_filename] = iso_date
 
-    # take as input a list of dates.
+    latest_fitnotes_file = str(max(date_list)) # use value (date in iso) for max, but pass in the key (date in file's format) to variable
+
+    
+    # navigate to folder with logs and search for user's most recent weight log.
+    
+    
+    
+    # 
+
+    # load the most recent weight log file for that user into a python dictionary (slice 10 chars in)
 
     # use averaging logic between points, that will average all weightthat sits between the current log entry, and the next one (not inclusively of the latter)
 
