@@ -81,7 +81,7 @@ def tommy():
 
     else: # GET method indicates user put address to route to the function.  
         print(f"Attempting to call weight graph...")
-        fetch_data_weight_graph()
+        fetch_data_weight_graph("Tommy")
         return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
             
 @app.route('/nathan', methods=["GET", "POST"])
@@ -476,37 +476,45 @@ def process_weight_log():
 
     return "Entered process_csv."
 
-def fetch_data_weight_graph():
+def fetch_data_weight_graph(username): # add a name argument to find correct user. 
+    # formats to use max(), compare dates
+    input_datetime_format = "%Y-%m-%d" 
+    output_iso_format = "%Y-%m-%dT%H:%M:%S"
+
     print("Entered fetch weight graph.")
     # TODO: Add string input to function for username.  
     # navigate to folder with logs and search for user's most recent weight log.
     archive_folder = os.listdir(app.config['LOG_ARCHIVE'])
     print(f"archive_folder = {archive_folder}")
+
+
     
+    # Split file name, taking the name and date to check if it's more current, for relevant user. 
+    # If there is no archive for user, return error. 
+    most_current_file = ""
     for item in archive_folder:
         filename_parts = item.split("_")
-        if len(filename_parts) >= 3:
-            extracted_user = filename_parts[1]
-            print(f"Extracted the username from file as: {extracted_user} ")
+        extracted_user = filename_parts[1]
+
+        if extracted_user == username:
+            print(f"Found file belonging to called user: {extracted_user}. Checking if most current...") 
+
+            #Need a take first, then subsequent are testing for which is max logic. 
+
+                
+
+            # if extracted name matches username + the date is more current than in buffer, take it instead. 
+        
         return
-        unformatted_date = datetime.strptime(sliced_filename, input_format)
-        iso_date = unformatted_date.strftime(output_iso_format)
-        date_list[sliced_filename] = iso_date
 
-    latest_fitnotes_file = str(max(date_list)) # use value (date in iso) for max, but pass in the key (date in file's format) to variable
-
-    
     # navigate to folder with logs and search for user's most recent weight log.
     
     
     
-    # 
-
     # load the most recent weight log file for that user into a python dictionary (slice 10 chars in)
 
     # use averaging logic between points, that will average all weightthat sits between the current log entry, and the next one (not inclusively of the latter)
 
-    # 
 
 
 
