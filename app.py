@@ -420,14 +420,15 @@ def process_weight_log():
     #Start processing the CSV's, extracting relevant data into a python dictionary.
      
 
-    #Check for most recent file:
+    #Check for most recent file, in weight log folder. Use that most recent folder to create JSON string archive file:
     # 1. Slice date sections of all filenames in directory. 
     # 2. Convert to datetime compatible for comparison with max()
     # Once max file found, save it's name. 
+    # TODO: Need to integrate username checking logic. 
     weight_logs_directory = os.listdir(app.config['WEIGHT_LOG_FOLDER'])    
 
     input_format = "%Y_%m_%d_%H_%M_%S" 
-    output_iso_format = "%Y-%m-%dT%H:%M:%S"
+    output_iso_format = "%Y-%m-%d"
     file_prefix = "/FitNotes_BodyTracker_Export_" 
     file_suffix = ".csv"
     date_list = {} 
@@ -476,44 +477,66 @@ def process_weight_log():
 
     return "Entered process_csv."
 
+
+def json_string_to_graph_points(axis, filename):
+    """ This function takes a filename string that points to a JSON string file and returns a python list object.
+        Args: (list of axis ticks), (JSON file to use's name)
+    
+        Input file is as provided by process_weight_log(), consisting of json weight log entries. 
+        The JSON data is processed, creating average values respective of the window between axis points. 
+        
+        e.g if received list is ['14 Aug, 2023', '21 Aug, 2023']:
+            - the value for "21 Aug, 2023" will be an average of all entries between then and the prev date ("14 Aug, 2023"), 
+            - This logic will follow up until the first date. 
+                - If the first date has entries before it, then use the same logic. 
+            - If any window/tick does not have entries before it to average, it will:
+                - If it's first or last point, it will use the closest calculated point. 
+                - If it's between calculated points, it will instead average the two closest calcualted points. 
+        
+    """
+    pass
+
 def fetch_data_weight_graph(username): # add a name argument to find correct user. 
+
     # formats to use max(), compare dates
-    input_datetime_format = "%Y-%m-%d" 
-    output_iso_format = "%Y-%m-%dT%H:%M:%S"
+    datetime_format = "%Y-%m-%d" 
 
     print("Entered fetch weight graph.")
     # TODO: Add string input to function for username.  
     # navigate to folder with logs and search for user's most recent weight log.
     archive_folder = os.listdir(app.config['LOG_ARCHIVE'])
     print(f"archive_folder = {archive_folder}")
-
-
     
     # Split file name, taking the name and date to check if it's more current, for relevant user. 
-    # If there is no archive for user, return error. 
     most_current_file = ""
     for item in archive_folder:
         filename_parts = item.split("_")
         extracted_user = filename_parts[1]
-
-        if extracted_user == username:
-            print(f"Found file belonging to called user: {extracted_user}. Checking if most current...") 
-
-            #Need a take first, then subsequent are testing for which is max logic. 
-
-                
-
-            # if extracted name matches username + the date is more current than in buffer, take it instead. 
         
-        return
+        #manual assignment for testing: 
+        username  = "Tommy"
 
-    # navigate to folder with logs and search for user's most recent weight log.
+        # if there is not yet a most current file and this matches user, take it as most current. 
+        if extracted_user == username and not most_current_file:
+            most_current_file = datetime.strptime(filename_parts[2], datetime_format)
+        
+        # Compare most current file with the target file, taking the most current:     
+        target_file = datetime.strptime(filename_parts[2], datetime_format)
+        if extracted_user == username and most_current_file < target_file: 
+            most_current_file = target_file
     
-    
-    
-    # load the most recent weight log file for that user into a python dictionary (slice 10 chars in)
+    # TODO: Using the max date, rebuild the filename string. 
+    most_current_file = f"WeightLog_{username}_{most_current_file.strftime(datetime_format)}"
 
-    # use averaging logic between points, that will average all weightthat sits between the current log entry, and the next one (not inclusively of the latter)
+    print(f"Most current file found is: {most_current_file}")
+        
+    # once all files are parsed and most current file is found, use that file to fetch graph points. 
+    # json_string_to_graph_points()
+    
+    # separate into functions (?). 
+
+    return
+
 
 
 
