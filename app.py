@@ -503,13 +503,24 @@ def json_string_to_weight_plots(axis, filename):
                 - If it's between calculated points, it will instead average the two closest calcualted points. 
         
     """
+    datetime_format = "%Y-%m-%d" 
     #set location of most current weight JSON file: 
     file_location = os.path.join(app.config['LOG_ARCHIVE'], filename)
     with open(file_location) as reader:
-        # Load the JSON string file into variable as a python dict -- iterate over the dict to create a new list where the dates are datetime objects. 
-        WLog_entries_input= reader.read() # read file into variable
-        WLog_entries_dict = json.loads(WLog_entries_input) # load one more time to convert into python data type (dict)
+        # Load the JSON string file into variable as a python dict
+        WLog_entries_dict = json.loads(reader.read()) 
         print(f"after loading JSON file:  {type(WLog_entries_dict)}")
+
+        # build a new list of plot points by processing entries into aggregate averages. 
+        # it should be as long as len(axis)
+        highest_date_as_str_test = ""
+        for pair in WLog_entries_dict["data"]: 
+            if not highest_date_as_str_test: 
+                highest_date_as_str_test = pair[0]
+            if datetime.strptime(highest_date_as_str_test, datetime_format) < datetime.strptime(pair[0],datetime_format): 
+                print(f"New highest found: {pair[0]}\n")
+                highest_date_as_str_test = pair[0]
+        
               
     # Convert input axis list into a list of datetime objects. 
     
