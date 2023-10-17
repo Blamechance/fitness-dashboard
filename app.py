@@ -479,7 +479,7 @@ def process_weight_log():
     output_filepath = os.path.join(app.config['LOG_ARCHIVE'], output_filename)
 
     with open(output_filepath, 'w', encoding="utf-8") as final_json_output:
-        final_json_output.write(json.dumps(parsed_entries_string))
+        final_json_output.write(parsed_entries_string)
     
     # clean up temp file and return:
     os.remove(temp_file_location)
@@ -508,11 +508,8 @@ def json_string_to_weight_plots(axis, filename):
     with open(file_location) as reader:
         # Load the JSON string file into variable as a python dict -- iterate over the dict to create a new list where the dates are datetime objects. 
         WLog_entries_input= reader.read() # read file into variable
-        WLog_entries_string = json.loads(WLog_entries_input) # load contents for the JSON string file it is
-        print(f"first loads: {type(WLog_entries_string)}")
-
-        WLog_entries_dict = json.loads(WLog_entries_string) # load one more time to convert into python data type (dict)
-        print(f"second loads:  {type(WLog_entries_dict)}")
+        WLog_entries_dict = json.loads(WLog_entries_input) # load one more time to convert into python data type (dict)
+        print(f"after loading JSON file:  {type(WLog_entries_dict)}")
               
     # Convert input axis list into a list of datetime objects. 
     
