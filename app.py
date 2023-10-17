@@ -81,7 +81,15 @@ def tommy():
 
     else: # GET method indicates user put address to route to the function.  
         print(f"Attempting to call weight graph...")
-        fetch_data_weight_graph("Tommy")
+        target_json_weight_file = find_max_weight_json("Tommy") # find the weight archive to load 
+        
+        # process most current JSON archive file with axis list to find average points to graph. 
+        weight_graph_12m_points = json_string_to_weight_plots(x_axis_12, target_json_weight_file)
+        weight_graph_6m_points = json_string_to_weight_plots(x_axis_6, target_json_weight_file)
+        weight_graph_3m_points = json_string_to_weight_plots(x_axis_3, target_json_weight_file)
+        
+        print(f"graph points to plot:\n12m:{weight_graph_12m_points}\n6m:{weight_graph_6m_points}\n3m:{weight_graph_3m_points}")
+        
         return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
             
 @app.route('/nathan', methods=["GET", "POST"])
@@ -452,10 +460,11 @@ def process_weight_log():
 
     # use pandas to extract log entry dates and weights
     cleaned_df = df.drop(drop_columns, axis='columns')
-    parsed_entries_string= cleaned_df.to_json(orient='split') #argument to convert output to json string
+    parsed_entries_string = cleaned_df.to_json(orient='split') #argument to convert output to json string
 
     # load that data into a string of dates. 
     loaded_entries = json.loads(parsed_entries_string)
+    print(f"loaded_entries type: {type(loaded_entries)}")
     log_entry_data = loaded_entries["data"]
     log_entry_dates = []
 
@@ -478,7 +487,7 @@ def process_weight_log():
     return "Entered process_csv."
 
 
-def json_string_to_graph_points(axis, filename):
+def json_string_to_weight_plots(axis, filename):
     """ This function takes a filename string that points to a JSON string file and returns a python list object.
         Args: (list of axis ticks), (JSON file to use's name)
     
@@ -494,9 +503,28 @@ def json_string_to_graph_points(axis, filename):
                 - If it's between calculated points, it will instead average the two closest calcualted points. 
         
     """
-    pass
+    #set location of most current weight JSON file: 
+    file_location = os.path.join(app.config['LOG_ARCHIVE'], filename)
+    with open(file_location) as reader:
+        # Load the JSON string file into variable as a python dict -- iterate over the dict to create a new list where the dates are datetime objects. 
+        WLog_entries_input= reader.read() # read file into variable
+        WLog_entries_string = json.loads(WLog_entries_input) # load contents for the JSON string file it is
+        print(f"first loads: {type(WLog_entries_string)}")
 
-def fetch_data_weight_graph(username): # add a name argument to find correct user. 
+        WLog_entries_dict = json.loads(WLog_entries_string) # load one more time to convert into python data type (dict)
+        print(f"second loads:  {type(WLog_entries_dict)}")
+              
+    # Convert input axis list into a list of datetime objects. 
+    
+    # have a new list variable [], that while it's len() is not len(axis input):
+        # for each dict entry, if date is within (x) days before it, aggregate it. 
+        # else if it has no entries before it, check a further (x) days before it, if something is found, average between that super old point and the next point.
+        # otherwise, use the closest one in front of it. 
+
+    
+    
+
+def find_max_weight_json(username): # add a name argument to find correct user. 
 
     # formats to use max(), compare dates
     datetime_format = "%Y-%m-%d" 
@@ -529,13 +557,8 @@ def fetch_data_weight_graph(username): # add a name argument to find correct use
     most_current_file = f"WeightLog_{username}_{most_current_file.strftime(datetime_format)}"
 
     print(f"Most current file found is: {most_current_file}")
-        
-    # once all files are parsed and most current file is found, use that file to fetch graph points. 
-    # json_string_to_graph_points()
-    
-    # separate into functions (?). 
 
-    return
+    return most_current_file 
 
 
 
