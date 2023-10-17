@@ -504,27 +504,30 @@ def json_string_to_weight_plots(axis, filename):
         
     """
     datetime_format = "%Y-%m-%d" 
-    #set location of most current weight JSON file: 
     file_location = os.path.join(app.config['LOG_ARCHIVE'], filename)
+    graph_points = [] 
+    
     with open(file_location) as reader:
         # Load the JSON string file into variable as a python dict
         WLog_entries_dict = json.loads(reader.read()) 
-        print(f"after loading JSON file:  {type(WLog_entries_dict)}")
 
         # build a new list of plot points by processing entries into aggregate averages. 
         # it should be as long as len(axis)
+        
+        print(f"axis = {axis}")
+        # initialise lists for each axis to hold values to average. 
+        
         highest_date_as_str_test = ""
         for pair in WLog_entries_dict["data"]: 
-            if not highest_date_as_str_test: 
-                highest_date_as_str_test = pair[0]
-            if datetime.strptime(highest_date_as_str_test, datetime_format) < datetime.strptime(pair[0],datetime_format): 
-                print(f"New highest found: {pair[0]}\n")
-                highest_date_as_str_test = pair[0]
+            # if date is further back then the minimum date to include, break loop
+            
+            # if date <= first axis (but within scope), add weight to list for this axis: 
+            
         
               
     # Convert input axis list into a list of datetime objects. 
     
-    # have a new list variable [], that while it's len() is not len(axis input):
+    # have a new list variable [], that while it's graph_points != len(axis):
         # for each dict entry, if date is within (x) days before it, aggregate it. 
         # else if it has no entries before it, check a further (x) days before it, if something is found, average between that super old point and the next point.
         # otherwise, use the closest one in front of it. 
