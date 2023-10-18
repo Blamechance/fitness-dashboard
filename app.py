@@ -85,10 +85,12 @@ def tommy():
         
         # process most current JSON archive file with axis list to find average points to graph. 
         weight_graph_12m_points = json_string_to_weight_plots(x_axis_12, target_json_weight_file)
-        weight_graph_6m_points = json_string_to_weight_plots(x_axis_6, target_json_weight_file)
-        weight_graph_3m_points = json_string_to_weight_plots(x_axis_3, target_json_weight_file)
+        #weight_graph_6m_points = json_string_to_weight_plots(x_axis_6, target_json_weight_file)
+        #weight_graph_3m_points = json_string_to_weight_plots(x_axis_3, target_json_weight_file)
         
-        print(f"graph points to plot:\n12m:{weight_graph_12m_points}\n6m:{weight_graph_6m_points}\n3m:{weight_graph_3m_points}")
+        print(f"graph points to plot:\n12m:{weight_graph_12m_points}")
+        
+        #print(f"graph points to plot:\n12m:{weight_graph_12m_points}\n6m:{weight_graph_6m_points}\n3m:{weight_graph_3m_points}")
         
         return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
             
@@ -503,27 +505,41 @@ def json_string_to_weight_plots(axis, filename):
                 - If it's between calculated points, it will instead average the two closest calcualted points. 
         
     """
-    datetime_format = "%Y-%m-%d" 
+    datetime_format = "%Y-%m-%d"
+    axis_format = "%d %b, %Y" 
     file_location = os.path.join(app.config['LOG_ARCHIVE'], filename)
     graph_points = [] 
     
     with open(file_location) as reader:
         # Load the JSON string file into variable as a python dict
         WLog_entries_dict = json.loads(reader.read()) 
+        
+        output_data = []
+        input_weight_data = {} # to sort weight entries into. {axis point: [list of dates belonging to that window]}
+        
+        print(f"{axis}")
+        
+        for axis_date in axis: # take axis input as the keys for new dict -- values will a list bucket for all appropriate entries
+            date = datetime.strptime(axis_date, axis_format)
+            input_weight_data[date] = []
+        
+        # pass each weight entry through the axis to sort:   
+        for pair in WLog_entries_dict["data"]:
+            for i in range(len(axis)):
+                if datetime.strptime(pair[0], datetime_format) <= datetime.strptime(axis[i], axis_format):
+                    input_weight_data[datetime.strptime(axis[i], axis_format)].append(pair[1])
+        
+        # check each axis has a list, if not, generate an average value
+        print(f"After sorting, all lists are: {input_weight_data} \n\n")
 
-        # build a new list of plot points by processing entries into aggregate averages. 
-        # it should be as long as len(axis)
-        
-        print(f"axis = {axis}")
-        # initialise lists for each axis to hold values to average. 
-        
-        highest_date_as_str_test = ""
-        for pair in WLog_entries_dict["data"]: 
-            # if date is further back then the minimum date to include, break loop
-            
-            # if date <= first axis (but within scope), add weight to list for this axis: 
-            
-        
+        # average lists to find final list of values to return:
+        for key, value in input_weight_data.items():
+            print(f"value: {value}")
+            average_for_period = sum(value) / len(value)
+            output_data.append(average_for_period)
+        # print(f"output: {output_data}\n\n")
+    
+
               
     # Convert input axis list into a list of datetime objects. 
     
