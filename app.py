@@ -26,7 +26,7 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.config['WEIGHT_LOG_FOLDER'] = 'files/weight_logs'
 app.config['TRAINING_LOG_FOLDER'] = 'files/training_logs'
 app.config['LOG_ARCHIVE'] = 'files/log_archive'
-app.config['MAX_CONTENT_PATH'] = 50000 #sample files average 20KB. 
+app.config['MAX_CONTENT_PATH'] = 50000 # sample files average 20KB. 
 
 #Define appropriate CSV headers + byte length for validate function: 
 TRAINING_HEADERS = "Date,Exercise,Category,Weight (kgs),Reps,Distance,Distance Unit,Time,Comment"
@@ -40,12 +40,12 @@ CURRENT_TIME_DATE = datetime.now()
 
 
 #return the current month as a digit
-current_month = int(CURRENT_TIME_DATE.strftime("%m")) #%m prints month as digit
+current_month = int(CURRENT_TIME_DATE.strftime("%m")) # %m prints month as digit
 current_year = int(CURRENT_TIME_DATE.strftime("%Y")) #e.g 2013, 2019 etc.
 current_day = int(CURRENT_TIME_DATE.strftime("%-d")) #e.g 1, 17, 31 etc. 
 last_year = int(current_year) - 1
 
-DATETIME_NOW = date(current_year, current_month, current_day) # use previous variables to build dateobject
+DATETIME_NOW = date(current_year, current_month, current_day) 
 
 print(f"DATETIME_NOW = {DATETIME_NOW}")
 
@@ -510,6 +510,7 @@ def json_string_to_weight_plots(axis, filename):
     file_location = os.path.join(app.config['LOG_ARCHIVE'], filename)
     graph_points = [] 
     
+    
     with open(file_location) as reader:
         # Load the JSON string file into variable as a python dict
         WLog_entries_dict = json.loads(reader.read()) 
@@ -530,14 +531,26 @@ def json_string_to_weight_plots(axis, filename):
                     input_weight_data[datetime.strptime(axis[i], axis_format)].append(pair[1])
                     break
         
-        # check each axis has a list, if not, generate an average value
-        print(f"After sorting, all lists are: {input_weight_data} \n\n")
+        # check if each axis has a list, if not, generate an average value
+        previous_list = [] # holder for previous valid data, to swap for any zero lists.
+
+        if not input_weight_data.values(): # no matching data points at all, return empty list. 
+            return [0] * len(axis)
+
+        for key, values in input_weight_data.items():
+            if values: # update prev valid list var, if valid
+                previous_list = values.copy()
+            
+            elif not values: # if empty list detected, take previous valid list as estimate. 
+                input_weight_data[key] = previous_list.copy()
+
 
         # average lists to find final list of values to return:
-        for key, value in input_weight_data.items():
+        for value in input_weight_data.values():                
             average_for_period = sum(value) / len(value)
-            output_data.append(average_for_period)
+            output_data.append(round(average_for_period, 2))
         print(f"output: {output_data}\n\n")
+        return output_data
     
 
               
