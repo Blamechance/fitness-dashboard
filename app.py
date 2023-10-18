@@ -523,21 +523,21 @@ def json_string_to_weight_plots(axis, filename):
             date = datetime.strptime(axis_date, axis_format)
             input_weight_data[date] = []
         
-        # pass each weight entry through the axis to sort:   
+        # filter each weight entry through the time periods to sort:   
         for pair in WLog_entries_dict["data"]:
             for i in range(len(axis)):
                 if datetime.strptime(pair[0], datetime_format) <= datetime.strptime(axis[i], axis_format):
                     input_weight_data[datetime.strptime(axis[i], axis_format)].append(pair[1])
+                    break
         
         # check each axis has a list, if not, generate an average value
         print(f"After sorting, all lists are: {input_weight_data} \n\n")
 
         # average lists to find final list of values to return:
         for key, value in input_weight_data.items():
-            print(f"value: {value}")
             average_for_period = sum(value) / len(value)
             output_data.append(average_for_period)
-        # print(f"output: {output_data}\n\n")
+        print(f"output: {output_data}\n\n")
     
 
               
