@@ -84,12 +84,11 @@ def tommy():
         target_json_weight_file = find_most_current_weight_file("Tommy") # find the weight archive to load 
         
         # process most current JSON archive file with axis list to find average points to graph. 
-        #weight_graph_12m_points = json_string_to_weight_plots(x_axis_12, target_json_weight_file)
+        weight_graph_12m_points = json_string_to_weight_plots(x_axis_12, target_json_weight_file)
         weight_graph_6m_points = json_string_to_weight_plots(x_axis_6, target_json_weight_file)
         weight_graph_3m_points = json_string_to_weight_plots(x_axis_3, target_json_weight_file)
         
-        print(f"6m graph points: {weight_graph_6m_points}")
-        #print(f"graph points to plot:\n12m:{weight_graph_12m_points}\n6m:{weight_graph_6m_points}\n3m:{weight_graph_3m_points}")
+        print(f"graph points to plot:\n12m:{weight_graph_12m_points}\n6m:{weight_graph_6m_points}\n3m:{weight_graph_3m_points}")
         
         return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
             
@@ -512,15 +511,12 @@ def json_string_to_weight_plots(axis, filename):
         WLog_entries_dict = json.loads(reader.read()) 
         output_data = []
         input_weight_data = {} # to sort weight entries into. {axis point: [list of dates belonging to that window]}
-        print(f"axis: {axis}\n")
         min_date =  datetime.strptime(axis[0], axis_format) - (datetime.strptime(axis[1], axis_format) - datetime.strptime(axis[0], axis_format)) # Find the increment distance for this axis, and do not further than one decrement from first axis. 
-        print(f"min_date: {min_date}")
 
         for axis_date in axis: # take axis input as the keys for new dict -- values will a list bucket for all appropriate entries
             date = datetime.strptime(axis_date, axis_format)
             input_weight_data[date] = []
         
-        print(f"Dicts to pass to append conditions: {WLog_entries_dict}")
         # filter each weight entry through the time periods to sort - if it's within scope of axis dates:   
         for pair in WLog_entries_dict["data"]:
             #print(f"6m debugging - pair: {pair}")
@@ -528,19 +524,15 @@ def json_string_to_weight_plots(axis, filename):
                 target_date = datetime.strptime(pair[0], datetime_format)
                 target_axis_date = datetime.strptime(axis[i], axis_format)
 
-                print(f"Is {target_date} larger than {min_date} but less than {target_axis_date}?")
                 if (target_date >= min_date and
                     target_date <= target_axis_date):
-                        print(f"Yes!")
                         input_weight_data[target_axis_date].append(pair[1])
                         break
-                print(f"No!")
         
         # check if each axis has a list, if not, generate an average value
         previous_list = [] # holder for previous valid data, to swap for any zero lists.
-        print(f"6m debugging check input_weight_data values: {input_weight_data.values()}")
 
-        if not input_weight_data.values(): # no matching data points at all, return empty list.
+        if not any(input_weight_data.values()): # no matching data points at all, return empty list.
             print(f"No relevant data found in file for graph!") 
             return [0] * len(axis)
 
@@ -561,6 +553,7 @@ def json_string_to_weight_plots(axis, filename):
         for value in input_weight_data.values():                
             average_for_period = sum(value) / len(value)
             output_data.append(round(average_for_period, 2))
+        print(f"min_date: {min_date}\naxis: {axis}")
         print(f"output: {output_data}\n\n")
         return output_data
     
