@@ -81,15 +81,14 @@ def tommy():
 
     else: # GET method indicates user put address to route to the function.  
         print(f"Attempting to call weight graph...")
-        target_json_weight_file = find_max_weight_json("Tommy") # find the weight archive to load 
+        target_json_weight_file = find_most_current_weight_file("Tommy") # find the weight archive to load 
         
         # process most current JSON archive file with axis list to find average points to graph. 
-        weight_graph_12m_points = json_string_to_weight_plots(x_axis_12, target_json_weight_file)
-        #weight_graph_6m_points = json_string_to_weight_plots(x_axis_6, target_json_weight_file)
-        #weight_graph_3m_points = json_string_to_weight_plots(x_axis_3, target_json_weight_file)
+        #weight_graph_12m_points = json_string_to_weight_plots(x_axis_12, target_json_weight_file)
+        weight_graph_6m_points = json_string_to_weight_plots(x_axis_6, target_json_weight_file)
+        weight_graph_3m_points = json_string_to_weight_plots(x_axis_3, target_json_weight_file)
         
-        print(f"graph points to plot:\n12m:{weight_graph_12m_points}")
-        
+        print(f"6m graph points: {weight_graph_6m_points}")
         #print(f"graph points to plot:\n12m:{weight_graph_12m_points}\n6m:{weight_graph_6m_points}\n3m:{weight_graph_3m_points}")
         
         return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
@@ -428,7 +427,6 @@ def process_weight_log():
         weight_history_log.write(json.dumps(weight_history))
 
     #Start processing the CSV's, extracting relevant data into a python dictionary.
-     
 
     #Check for most recent file, in weight log folder. Use that most recent folder to create JSON string archive file:
     # 1. Slice date sections of all filenames in directory. 
@@ -507,38 +505,51 @@ def json_string_to_weight_plots(axis, filename):
     """
     datetime_format = "%Y-%m-%d"
     axis_format = "%d %b, %Y" 
-    file_location = os.path.join(app.config['LOG_ARCHIVE'], filename)
-    graph_points = [] 
-    
+    file_location = os.path.join(app.config['LOG_ARCHIVE'], filename)    
     
     with open(file_location) as reader:
         # Load the JSON string file into variable as a python dict
         WLog_entries_dict = json.loads(reader.read()) 
-        
         output_data = []
         input_weight_data = {} # to sort weight entries into. {axis point: [list of dates belonging to that window]}
-        
-        print(f"{axis}")
-        
+        print(f"axis: {axis}\n")
+        min_date =  datetime.strptime(axis[0], axis_format) - (datetime.strptime(axis[1], axis_format) - datetime.strptime(axis[0], axis_format)) # Find the increment distance for this axis, and do not further than one decrement from first axis. 
+        print(f"min_date: {min_date}")
+
         for axis_date in axis: # take axis input as the keys for new dict -- values will a list bucket for all appropriate entries
             date = datetime.strptime(axis_date, axis_format)
             input_weight_data[date] = []
         
-        # filter each weight entry through the time periods to sort:   
+        print(f"Dicts to pass to append conditions: {WLog_entries_dict}")
+        # filter each weight entry through the time periods to sort - if it's within scope of axis dates:   
         for pair in WLog_entries_dict["data"]:
+            #print(f"6m debugging - pair: {pair}")
             for i in range(len(axis)):
-                if datetime.strptime(pair[0], datetime_format) <= datetime.strptime(axis[i], axis_format):
-                    input_weight_data[datetime.strptime(axis[i], axis_format)].append(pair[1])
-                    break
+                target_date = datetime.strptime(pair[0], datetime_format)
+                target_axis_date = datetime.strptime(axis[i], axis_format)
+
+                print(f"Is {target_date} larger than {min_date} but less than {target_axis_date}?")
+                if (target_date >= min_date and
+                    target_date <= target_axis_date):
+                        print(f"Yes!")
+                        input_weight_data[target_axis_date].append(pair[1])
+                        break
+                print(f"No!")
         
         # check if each axis has a list, if not, generate an average value
         previous_list = [] # holder for previous valid data, to swap for any zero lists.
+        print(f"6m debugging check input_weight_data values: {input_weight_data.values()}")
 
-        if not input_weight_data.values(): # no matching data points at all, return empty list. 
+        if not input_weight_data.values(): # no matching data points at all, return empty list.
+            print(f"No relevant data found in file for graph!") 
             return [0] * len(axis)
 
-        for key, values in input_weight_data.items():
-            if values: # update prev valid list var, if valid
+        for values in input_weight_data.values(): # take at least one data point to fill zero list replacement variable. 
+            if values:
+                previous_list = values.copy() 
+
+        for key, values in input_weight_data.items(): # update prev valid list var, if valid
+            if values:
                 previous_list = values.copy()
             
             elif not values: # if empty list detected, take previous valid list as estimate. 
@@ -546,6 +557,7 @@ def json_string_to_weight_plots(axis, filename):
 
 
         # average lists to find final list of values to return:
+        print(f"pre-average data: {input_weight_data}")
         for value in input_weight_data.values():                
             average_for_period = sum(value) / len(value)
             output_data.append(round(average_for_period, 2))
@@ -564,7 +576,9 @@ def json_string_to_weight_plots(axis, filename):
     
     
 
-def find_max_weight_json(username): # add a name argument to find correct user. 
+def find_most_current_weight_file(username):
+    """ Takes username as argument, and returns the filename of the most current respective archive file. 
+    """
 
     # formats to use max(), compare dates
     datetime_format = "%Y-%m-%d" 
