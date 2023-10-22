@@ -450,6 +450,8 @@ def process_weight_log():
 
     latest_fitnotes_file = str(max(date_list)) # use value (date in iso) for max, but pass in the key (date in file's format) to variable
 
+    # TODO: Include logic to parse
+
     # drop irrelevant columsn in target file, creating a python dictionary of {date:weight} 
     drop_columns = ["Time", "Measurement", "Unit", "Comment"]
 
