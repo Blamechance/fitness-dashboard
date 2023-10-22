@@ -24,7 +24,7 @@
         labels: JSON.parse('{{ x_axis_12 | tojson }}'),
         datasets: [{
             label: "Weight (kg)", 
-            data: [54, 55, 58, 60, 63, 60, 65, 70, 72, 65, 80, 78, 75],
+            data: JSON.parse('{{ weight_graph_12m_points | tojson }}'),
             borderColor: 'rgb(242,133,0)',
             tension: 0.1,
             fill: false
@@ -55,7 +55,7 @@
             labels: JSON.parse('{{ x_axis_3 | tojson }}'),
             datasets: [{
                 label: "Weight (kg)", 
-                data: [72, 79, 75, 77, 62, 65,62,58,68,70.5,70,72,] ,
+                data: JSON.parse('{{ weight_graph_3m_points | tojson }}') ,
                 borderColor: 'rgb(242,133,0)',
                 tension: 0.1,
                 fill: false
@@ -73,7 +73,7 @@
             labels: JSON.parse('{{ x_axis_12 | tojson }}'),
             datasets: [{
                 label: "Weight (kg)", 
-                data: [54, 55, 58, 60, 63, 60, 65, 70, 72, 65, 80, 78, 75],
+                data: JSON.parse('{{ weight_graph_12m_points | tojson }}'),
                 borderColor: 'rgb(242,133,0)',
                 tension: 0.1,
                 fill: false
@@ -91,7 +91,7 @@
             labels: JSON.parse('{{ x_axis_6 | tojson }}'),
             datasets: [{
                 label: "Weight (kg)", 
-                data: [72, 79, 75, 77, 62, 65, 72, 79, 75, 77, 62, 65],
+                data: JSON.parse('{{ weight_graph_6m_points | tojson }}'),
                 borderColor: 'rgb(242,133,0)',
                 tension: 0.1,
                 fill: false
@@ -111,8 +111,6 @@
     <select id="vol-period-selection" name="vol-analysis-period">    
     <input type="submit" id="volume-submit-btn" name="vol-input" value="Analyse"/>
 </form>
-
-<!-- <button class="btn btn-primary" id="volForm-btn" type="submit">Analyse</button> <!-- manual analyse button / alternative for form submit-->
 
 
 <script>

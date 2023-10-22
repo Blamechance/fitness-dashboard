@@ -87,10 +87,12 @@ def tommy():
         weight_graph_12m_points = json_string_to_weight_plots(x_axis_12, target_json_weight_file)
         weight_graph_6m_points = json_string_to_weight_plots(x_axis_6, target_json_weight_file)
         weight_graph_3m_points = json_string_to_weight_plots(x_axis_3, target_json_weight_file)
-        
-        print(f"graph points to plot:\n12m:{weight_graph_12m_points}\n6m:{weight_graph_6m_points}\n3m:{weight_graph_3m_points}")
-        
-        return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
+                
+        return render_template("tommy.html",
+                               x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6,
+                                weight_graph_12m_points = weight_graph_12m_points,
+                                weight_graph_6m_points = weight_graph_6m_points,
+                                weight_graph_3m_points = weight_graph_3m_points) 
             
 @app.route('/nathan', methods=["GET", "POST"])
 def nathan():
@@ -556,12 +558,10 @@ def json_string_to_weight_plots(axis, filename):
 
 
         # average lists to find final list of values to return:
-        print(f"pre-average data: {input_weight_data}")
         for value in input_weight_data.values():                
             average_for_period = sum(value) / len(value)
             output_data.append(round(average_for_period, 2))
-        print(f"min_date: {min_date}\naxis: {axis}")
-        print(f"output: {output_data}\n\n")
+
         return output_data
     
 
