@@ -297,6 +297,8 @@ def upload_file():
     """
     This function receives the file attached to the form submission for processing. 
     If file is found to not be of .csv/.txt or data validation fails, then file is deleted and error code is returned. 
+
+    TODO: Pass an argument to process_weight_log() that contains username. 
     """
     #Received object with form data is a list-like structure (immutable dict): 
     if len(request.form.getlist("uploadType")) == 0: # null check -- using string literal as JSON "none" was received
@@ -452,14 +454,17 @@ def process_weight_log():
 
     # TODO: Include logic to parse
 
-    # drop irrelevant columsn in target file, creating a python dictionary of {date:weight} 
-    drop_columns = ["Time", "Measurement", "Unit", "Comment"]
-
+    # Parse for non-bodyweight rows to delete,
+    # then drop irrelevant column in target file, creating a python dictionary of {date:weight} 
     # build file name using the date of the most recent submitted fitnotes sheet
     filename = f"{file_prefix}{latest_fitnotes_file}{file_suffix}"
     df = pd.read_csv(app.config['WEIGHT_LOG_FOLDER']+filename)
+    drop_columns = ["Time", "Measurement", "Unit", "Comment"]
 
-    # use pandas to extract log entry dates and weights
+
+
+    # use pandas to extract log entry dates and weights, but only if it's bodyweight data
+    df = df.loc[df["Measurement"] == "Bodyweight" ]
     cleaned_df = df.drop(drop_columns, axis='columns')
     parsed_entries_string = cleaned_df.to_json(orient='split') #argument to convert output to json string
 
