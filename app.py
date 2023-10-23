@@ -65,7 +65,6 @@ def athletes():
 def checkin():
     return render_template("checkin.html") 
 
-#Athelete pages - maybe they can share a single function to call? 
 @app.route('/tommy', methods=["GET", "POST"])
 def tommy():
     #Prepare items to pass to Weight Line Graph -- dates on axis + points to plot:   
@@ -417,7 +416,7 @@ def process_weight_log():
         - Eventually, these snapshots will be viewable, and recoverable.         
     """
     #TODO: Might need to revisit after working on sessions and user authentication. 
-    #NOTE: This function will delete existing copies of the json file, so insert a backup function before proceeding
+    #NOTE: Wrap in a try-except so the except can delete temp file on error. 
 
     #Create a JSON file to populate in the archive folder, 
     #TODO: Upload to/create within folder according to username
@@ -563,17 +562,6 @@ def json_string_to_weight_plots(axis, filename):
             output_data.append(round(average_for_period, 2))
 
         return output_data
-    
-
-              
-    # Convert input axis list into a list of datetime objects. 
-    
-    # have a new list variable [], that while it's graph_points != len(axis):
-        # for each dict entry, if date is within (x) days before it, aggregate it. 
-        # else if it has no entries before it, check a further (x) days before it, if something is found, average between that super old point and the next point.
-        # otherwise, use the closest one in front of it. 
-
-    
     
 
 def find_most_current_weight_file(username):
