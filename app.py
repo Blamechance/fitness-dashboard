@@ -284,14 +284,14 @@ def fetch3mXAxis():
     prev_3_months.reverse()
     return prev_3_months
 
-
+"""
 @app.route('/volume_analysis', methods=["POST"])
 def volume_analysis():
     print("Entered volume_analysis.")
     target_period = request.get_json("userPeriod") #this is not fetching the option properly.... 
     print("volume_analysis print of target_period: ", target_period)
     return jsonify(target_period)
-    
+""" 
     
 @app.route('/upload', methods=["POST"])
 def upload_file():
@@ -324,7 +324,7 @@ def upload_file():
             os.remove((os.path.join(app.config['TRAINING_LOG_FOLDER'], file_name)))
             return "File format error. Please export your file and try again. ", 400
         
-        process_weight_log()
+        process__log()
         return "Server file upload Success."        
     
     # Detect weight file and call processing function
@@ -493,6 +493,38 @@ def process_weight_log():
 
     return "Entered process_csv."
 
+def process_training_log():
+    temp_file = "temp_processing.json"
+    training_data = {}
+    temp_file_location = os.path.join(app.config['LOG_ARCHIVE'], temp_file)
+
+    #Start processing the CSV's, extracting relevant data into a python dictionary.
+
+    #Check for most recent file, in weight log folder. Use that most recent folder to create JSON string archive file:
+    # 1. Slice date sections of all filenames in directory. 
+    # 2. Convert to datetime compatible for comparison with max()
+    # Once max file found, save it's name. 
+    # TODO: Need to integrate username checking logic. 
+    training_logs_directory = os.listdir(app.config['TRAINING_LOG_FOLDER'])   
+     
+    input_format = "%Y_%m_%d_%H_%M_%S" 
+    output_iso_format = "%Y-%m-%d"
+    file_prefix = "/FitNotes_Export_" 
+    file_suffix = ".csv"
+    date_list = {} 
+    
+    for item in training_logs_directory: 
+        sliced_filename = item[item.index("202"):item.index(".csv")] #index between year and csv (inclusive of year but not csv)
+        unformatted_date = datetime.strptime(sliced_filename, input_format)
+        iso_date = unformatted_date.strftime(output_iso_format)
+        date_list[sliced_filename] = iso_date
+
+
+    latest_fitnotes_file = str(max(date_list)) # use value (date in iso) for max, but pass in the key (date in file's format) to variable
+    filename = f"{file_prefix}{latest_fitnotes_file}{file_suffix}"
+    df = pd.read_csv(app.config['TRAINING_LOG_FOLDER']+filename)
+    
+    
 
 def json_string_to_weight_plots(axis, filename):
     """ This function takes a filename string that points to a JSON string file and returns a python list object.
@@ -543,10 +575,14 @@ def json_string_to_weight_plots(axis, filename):
         if not any(input_weight_data.values()): # no matching data points at all, return empty list.
             print(f"No relevant data found in file for graph!") 
             return [0] * len(axis)
+        
+        print(f"axis: {axis}")
+        print(f"input data for debug: {input_weight_data.values()}")
 
         for values in input_weight_data.values(): # take at least one data point to fill zero list replacement variable. 
             if values:
-                previous_list = values.copy() 
+                previous_list = values.copy()
+                break 
 
         for key, values in input_weight_data.items(): # update prev valid list var, if valid
             if values:
