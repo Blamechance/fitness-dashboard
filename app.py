@@ -522,7 +522,18 @@ def process_training_log():
 
     latest_fitnotes_file = str(max(date_list)) # use value (date in iso) for max, but pass in the key (date in file's format) to variable
     filename = f"{file_prefix}{latest_fitnotes_file}{file_suffix}"
+    sorted_training_data = [] # list containing dicts of exercises, inside those dicts are lists of additional entries, which contain dicts of the details for that lift
+    
     df = pd.read_csv(app.config['TRAINING_LOG_FOLDER']+filename)
+    
+    
+    # Drop all unrelated columns in dataframe
+    
+    # for each row entry see if it is a PR (i.e if it exists in sorted_training_data as a list item)
+    # if it is, call strenght index function, add it to the dict of details, then append the whole dict as a list item.
+    # if not a PR (and hence a lifts exists in there already) append the lift's dict details as a list item, in the childrens data structure for that lift + add as entry strength index. 
+    
+    # 
     
     
 
