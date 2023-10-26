@@ -29,7 +29,8 @@ app.config['LOG_ARCHIVE'] = 'files/log_archive'
 app.config['MAX_CONTENT_PATH'] = 50000 # sample files average 20KB. 
 
 #Define appropriate CSV headers + byte length for validate function: 
-TRAINING_HEADERS = "Date,Exercise,Category,Weight (kgs),Reps,Distance,Distance Unit,Time,Comment"
+TRAINING_HEADERS = "Date,Exercise,Category,Weight,Weight Unit,Reps,Distance,Distance Unit,Time,Comment"
+
 WEIGHT_HEADERS = "Date,Time,Measurement,Value,Unit,Comment"
 T_HEADER_LENGTH = len(TRAINING_HEADERS) #works on logic that chars are one byte
 W_HEADER_LENGTH = len(WEIGHT_HEADERS)
@@ -319,12 +320,13 @@ def upload_file():
         print("File name: ", file_name)
         #save to files folder -- extend this logic to ensure no duplicates: 
         uploaded_file.save(os.path.join(app.config['TRAINING_LOG_FOLDER'], file_name))
+        
         if validate_CSV(file_name, submission_type) == False:
             print("Bad upload - validation failed. Deleting file.")
             os.remove((os.path.join(app.config['TRAINING_LOG_FOLDER'], file_name)))
             return "File format error. Please export your file and try again. ", 400
         
-        process__log()
+        process_training_log()
         return "Server file upload Success."        
     
     # Detect weight file and call processing function
@@ -412,8 +414,7 @@ def process_weight_log():
     """
         This function is called when the user prompts a button on the check-in page of website. 
         - All sheets in the related file directories are processed to pull out relevant data into a  {"date":"weight"} JSON list. 
-        - These JSON files will be backed up on the file system to operate as a "snapshot". 
-        - Eventually, these snapshots will be viewable, and recoverable.         
+        - These JSON files will be backed up on the file system to operate as a "snapshot" in the archive folder. 
     """
     #TODO: Might need to revisit after working on sessions and user authentication. 
     #NOTE: Wrap in a try-except so the except can delete temp file on error. 
@@ -523,14 +524,23 @@ def process_training_log():
     latest_fitnotes_file = str(max(date_list)) # use value (date in iso) for max, but pass in the key (date in file's format) to variable
     filename = f"{file_prefix}{latest_fitnotes_file}{file_suffix}"
     sorted_training_data = [] # list containing dicts of exercises, inside those dicts are lists of additional entries, which contain dicts of the details for that lift
+    drop_columns = ["Distance", "Distance Unit", "Time"]
     
+    # Drop all unrelated columns in dataframe + drop any sets of same details within same day. 
     df = pd.read_csv(app.config['TRAINING_LOG_FOLDER']+filename)
-    
+    df.drop(drop_columns, axis='columns', inplace=True)
+    df.drop_duplicates(keep="first", inplace=True, ignore_index=True)
+    print(df)
+    # TODO: While it's still in dataframe format, check for duplicate lifts on same date to filter out. 
+    # Once cleaned, use strength index calc to add a column and value to each remaining entry. 
+      
+    # 
     
     # Drop all unrelated columns in dataframe
     
     # for each row entry see if it is a PR (i.e if it exists in sorted_training_data as a list item)
     # if it is, call strenght index function, add it to the dict of details, then append the whole dict as a list item.
+    # WHAT IS THE UNIQUE INDEX FOR EACH LIFT?
     # if not a PR (and hence a lifts exists in there already) append the lift's dict details as a list item, in the childrens data structure for that lift + add as entry strength index. 
     
     # 
@@ -586,9 +596,6 @@ def json_string_to_weight_plots(axis, filename):
         if not any(input_weight_data.values()): # no matching data points at all, return empty list.
             print(f"No relevant data found in file for graph!") 
             return [0] * len(axis)
-        
-        print(f"axis: {axis}")
-        print(f"input data for debug: {input_weight_data.values()}")
 
         for values in input_weight_data.values(): # take at least one data point to fill zero list replacement variable. 
             if values:
