@@ -4,8 +4,7 @@ import json
 import pandas as pd
 
 
-from datetime import date
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from boltons import timeutils
 
 from flask import Flask, flash, redirect, render_template, request, session, jsonify
@@ -495,9 +494,21 @@ def process_weight_log():
     return "Entered process_csv."
 
 def process_training_log():
+    def append_BW_and_SI(row):
+        """ This function receives a dataframe row to do two things: 
+            1. Check if the date of the lift has bodyweight data stored in weight_log submissions, 
+                inclusive of 3 days in both directions (this provides a 7 day proximity window). 
+            2. If bodyweight data exists, then append a strength index calculation to the row.
+                If not, then leave it empty. 
+        """
+        pass
+
+        
+    
     temp_file = "temp_processing.json"
     training_data = {}
     temp_file_location = os.path.join(app.config['LOG_ARCHIVE'], temp_file)
+    
 
     #Start processing the CSV's, extracting relevant data into a python dictionary.
 
@@ -531,19 +542,15 @@ def process_training_log():
     df.drop(drop_columns, axis='columns', inplace=True)
     df.drop_duplicates(keep="first", inplace=True, ignore_index=True)
     print(df)
-    # TODO: While it's still in dataframe format, check for duplicate lifts on same date to filter out. 
-    # Once cleaned, use strength index calc to add a column and value to each remaining entry. 
+    
+    # Turn the DF into JSON String for processing. 
+    # use strength index calc to add a column and value to each remaining entry. 
       
-    # 
-    
-    # Drop all unrelated columns in dataframe
-    
+        
     # for each row entry see if it is a PR (i.e if it exists in sorted_training_data as a list item)
     # if it is, call strenght index function, add it to the dict of details, then append the whole dict as a list item.
-    # WHAT IS THE UNIQUE INDEX FOR EACH LIFT?
     # if not a PR (and hence a lifts exists in there already) append the lift's dict details as a list item, in the childrens data structure for that lift + add as entry strength index. 
     
-    # 
     
     
 
