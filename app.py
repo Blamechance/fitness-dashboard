@@ -494,17 +494,6 @@ def process_weight_log():
     return "Entered process_csv."
 
 def process_training_log():
-    def append_BW_and_SI(row):
-        """ This function receives a dataframe row to do two things: 
-            1. Check if the date of the lift has bodyweight data stored in weight_log submissions, 
-                inclusive of 3 days in both directions (this provides a 7 day proximity window). 
-            2. If bodyweight data exists, then append a strength index calculation to the row.
-                If not, then leave it empty. 
-        """
-        pass
-
-        
-    
     temp_file = "temp_processing.json"
     training_data = {}
     temp_file_location = os.path.join(app.config['LOG_ARCHIVE'], temp_file)
@@ -537,18 +526,28 @@ def process_training_log():
     sorted_training_data = [] # list containing dicts of exercises, inside those dicts are lists of additional entries, which contain dicts of the details for that lift
     drop_columns = ["Distance", "Distance Unit", "Time"]
     
-    # Drop all unrelated columns in dataframe + drop any sets of same details within same day. 
+    # Drop all unrelated columns in dataframe + drop any sets of same details within same day + add columns for BW/SI
     df = pd.read_csv(app.config['TRAINING_LOG_FOLDER']+filename)
     df.drop(drop_columns, axis='columns', inplace=True)
     df.drop_duplicates(keep="first", inplace=True, ignore_index=True)
+    df["Bodyweight"] = None
+    df["Strength Index"] = None
+    
     print(df)
     
-    # Turn the DF into JSON String for processing. 
+    # Iterate through each row, finding the 
     # use strength index calc to add a column and value to each remaining entry. 
+    for row in df:
+        if row["Exercise"] in sorted_training_data:
+            if row["Weight"] > sorted_training_data[5]: 
+                sorted_training_data = row # replace existing data with new row data. 
+            
+        
+        
       
         
     # for each row entry see if it is a PR (i.e if it exists in sorted_training_data as a list item)
-    # if it is, call strenght index function, add it to the dict of details, then append the whole dict as a list item.
+    # calculate and add the SI, then append the whole dict as a list item to sorted_training_data. 
     # if not a PR (and hence a lifts exists in there already) append the lift's dict details as a list item, in the childrens data structure for that lift + add as entry strength index. 
     
     
