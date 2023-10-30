@@ -407,42 +407,25 @@ def validate_CSV(file_name, type):
             return False 
     return False
     
+def find_most_recent_file(data_type):
+    weight_logs_directory = os.listdir(app.config[f"{data_type}"])    
 
+    file_suffix = ".csv"
+    date_list = {} 
 
-def process_weight_log():
-    """
-        This function is called when the user prompts a button on the check-in page of website. 
-        - All sheets in the related file directories are processed to pull out relevant data into a  {"date":"weight"} JSON list. 
-        - These JSON files will be backed up on the file system to operate as a "snapshot" in the archive folder. 
-    """
-    #TODO: Might need to revisit after working on sessions and user authentication. 
-    #NOTE: Wrap in a try-except so the except can delete temp file on error. 
+    if data_type == "WEIGHT_LOG_FOLDER":
+        file_prefix = "/FitNotes_BodyTracker_Export_" 
+    elif data_type == "TRAINING_LOG_FOLDER":
+        file_prefix = "/FitNotes_Export_" 
 
-    #Create a JSON file to populate in the archive folder, 
-    #TODO: Upload to/create within folder according to username
-    temp_file = "temp_processing.json"
-    weight_history = {}
-    temp_file_location = os.path.join(app.config['LOG_ARCHIVE'], temp_file)
-
-    #create temp file the existing json log file. 
-    with open(temp_file_location, 'w', encoding="utf-8") as weight_history_log:
-        weight_history_log.write(json.dumps(weight_history))
-
-    #Start processing the CSV's, extracting relevant data into a python dictionary.
 
     #Check for most recent file, in weight log folder. Use that most recent folder to create JSON string archive file:
     # 1. Slice date sections of all filenames in directory. 
     # 2. Convert to datetime compatible for comparison with max()
     # Once max file found, save it's name. 
+
+    #NOTE: Wrap in a try-except so the except can delete temp file on error.
     # TODO: Need to integrate username checking logic. 
-    weight_logs_directory = os.listdir(app.config['WEIGHT_LOG_FOLDER'])    
-
-    input_format = "%Y_%m_%d_%H_%M_%S" 
-    output_iso_format = "%Y-%m-%d"
-    file_prefix = "/FitNotes_BodyTracker_Export_" 
-    file_suffix = ".csv"
-    date_list = {} 
-
 
     for item in weight_logs_directory: 
         sliced_filename = item[item.index("202"):item.index(".csv")] #index between year and csv (inclusive of year but not csv)
@@ -452,13 +435,21 @@ def process_weight_log():
 
 
     latest_fitnotes_file = str(max(date_list)) # use value (date in iso) for max, but pass in the key (date in file's format) to variable
+    filename = f"{file_prefix}{latest_fitnotes_file}{file_suffix}"
+    return filename
+    
 
-    # TODO: Include logic to parse
+def process_weight_log():
 
+    """
+        This function is called when the user prompts a button on the check-in page of website. 
+        - All sheets in the related file directories are processed to pull out relevant data into a  {"date":"weight"} JSON list. 
+        - These JSON files will be backed up on the file system to operate as a "snapshot" in the archive folder. 
+    """
     # Parse for non-bodyweight rows to delete,
     # then drop irrelevant column in target file, creating a python dictionary of {date:weight} 
     # build file name using the date of the most recent submitted fitnotes sheet
-    filename = f"{file_prefix}{latest_fitnotes_file}{file_suffix}"
+    filename = find_most_recent_file("WEIGHT_LOG_FOLDER")
     df = pd.read_csv(app.config['WEIGHT_LOG_FOLDER']+filename)
     drop_columns = ["Time", "Measurement", "Unit", "Comment"]
 
@@ -487,42 +478,21 @@ def process_weight_log():
 
     with open(output_filepath, 'w', encoding="utf-8") as final_json_output:
         final_json_output.write(parsed_entries_string)
-    
-    # clean up temp file and return:
-    os.remove(temp_file_location)
 
     return "Entered process_csv."
 
+
+
+def fetch_BW(date):
+    """ input: This function takes a datetime object + filename to search within. 
+        returns: Returns the matching BW for that date (within a 7 day window - 3 days on either side of the date), if exists. 
+                If there is no matching date, it will return None. 
+    """
+    pass
+
+
 def process_training_log():
-    temp_file = "temp_processing.json"
-    training_data = {}
-    temp_file_location = os.path.join(app.config['LOG_ARCHIVE'], temp_file)
-    
-
-    #Start processing the CSV's, extracting relevant data into a python dictionary.
-
-    #Check for most recent file, in weight log folder. Use that most recent folder to create JSON string archive file:
-    # 1. Slice date sections of all filenames in directory. 
-    # 2. Convert to datetime compatible for comparison with max()
-    # Once max file found, save it's name. 
-    # TODO: Need to integrate username checking logic. 
-    training_logs_directory = os.listdir(app.config['TRAINING_LOG_FOLDER'])   
-     
-    input_format = "%Y_%m_%d_%H_%M_%S" 
-    output_iso_format = "%Y-%m-%d"
-    file_prefix = "/FitNotes_Export_" 
-    file_suffix = ".csv"
-    date_list = {} 
-    
-    for item in training_logs_directory: 
-        sliced_filename = item[item.index("202"):item.index(".csv")] #index between year and csv (inclusive of year but not csv)
-        unformatted_date = datetime.strptime(sliced_filename, input_format)
-        iso_date = unformatted_date.strftime(output_iso_format)
-        date_list[sliced_filename] = iso_date
-
-
-    latest_fitnotes_file = str(max(date_list)) # use value (date in iso) for max, but pass in the key (date in file's format) to variable
-    filename = f"{file_prefix}{latest_fitnotes_file}{file_suffix}"
+    filename = find_most_recent_file("TRAINING_LOG_FOLDER")    
     sorted_training_data = [] # list containing dicts of exercises, inside those dicts are lists of additional entries, which contain dicts of the details for that lift
     drop_columns = ["Distance", "Distance Unit", "Time"]
     
@@ -534,15 +504,16 @@ def process_training_log():
     df["Strength Index"] = None
     
     print(df)
-    
-    # Iterate through each row, finding the 
-    # use strength index calc to add a column and value to each remaining entry. 
-    for row in df:
-        if row["Exercise"] in sorted_training_data:
-            if row["Weight"] > sorted_training_data[5]: 
-                sorted_training_data = row # replace existing data with new row data. 
-            
         
+    # use strength index calc to add a column and value to each remaining entry + Add bodyweights to each row. 
+    for row in df:
+        if row["Date"] #is within 7 day window: 
+        weight = fetch_BW(row["Date"])
+        if row 
+
+            
+    # Iterate through each row, finding the true heaviest weight lifted for each exercise.
+
         
       
         
