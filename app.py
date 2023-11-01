@@ -284,14 +284,6 @@ def fetch3mXAxis():
     prev_3_months.reverse()
     return prev_3_months
 
-"""
-@app.route('/volume_analysis', methods=["POST"])
-def volume_analysis():
-    print("Entered volume_analysis.")
-    target_period = request.get_json("userPeriod") #this is not fetching the option properly.... 
-    print("volume_analysis print of target_period: ", target_period)
-    return jsonify(target_period)
-""" 
     
 @app.route('/upload', methods=["POST"])
 def upload_file():
@@ -407,14 +399,16 @@ def validate_CSV(file_name, type):
             return False 
     return False
     
-def find_most_recent_file(data_type):
-    weight_logs_directory = os.listdir(app.config[f"{data_type}"])    
-
+def select_latest_csv(data_type):
+    log_dir = os.listdir(app.config[f"{data_type}"])    
+    input_format = "%Y_%m_%d_%H_%M_%S" 
+    output_iso_format = "%Y-%m-%dT%H:%M:%S"
     file_suffix = ".csv"
     date_list = {} 
 
     if data_type == "WEIGHT_LOG_FOLDER":
         file_prefix = "/FitNotes_BodyTracker_Export_" 
+
     elif data_type == "TRAINING_LOG_FOLDER":
         file_prefix = "/FitNotes_Export_" 
 
@@ -425,9 +419,9 @@ def find_most_recent_file(data_type):
     # Once max file found, save it's name. 
 
     #NOTE: Wrap in a try-except so the except can delete temp file on error.
-    # TODO: Need to integrate username checking logic. 
+    #TODO: Need to integrate username checking logic. 
 
-    for item in weight_logs_directory: 
+    for item in log_dir: 
         sliced_filename = item[item.index("202"):item.index(".csv")] #index between year and csv (inclusive of year but not csv)
         unformatted_date = datetime.strptime(sliced_filename, input_format)
         iso_date = unformatted_date.strftime(output_iso_format)
@@ -437,6 +431,25 @@ def find_most_recent_file(data_type):
     latest_fitnotes_file = str(max(date_list)) # use value (date in iso) for max, but pass in the key (date in file's format) to variable
     filename = f"{file_prefix}{latest_fitnotes_file}{file_suffix}"
     return filename
+
+def select_latest_JSON(data_type, username):
+    log_dir = os.listdir(app.config['LOG_ARCHIVE'])
+    datetime_format = "%Y-%m-%d"
+    date_list = []
+
+    if data_type == "weight":
+        file_prefix = "/WeightLog_" 
+
+    elif data_type == "training":
+        file_prefix = "TBD" 
+
+    for item in log_dir: 
+        sliced_filename = item[item.index("202"):] #index between year and csv (inclusive of year but not csv)
+        date_list.append(sliced_filename)
+    
+    filename = f"{file_prefix}{username}_{str(max(date_list))}"
+    return filename
+
     
 
 def process_weight_log():
@@ -449,7 +462,7 @@ def process_weight_log():
     # Parse for non-bodyweight rows to delete,
     # then drop irrelevant column in target file, creating a python dictionary of {date:weight} 
     # build file name using the date of the most recent submitted fitnotes sheet
-    filename = find_most_recent_file("WEIGHT_LOG_FOLDER")
+    filename = select_latest_csv("WEIGHT_LOG_FOLDER")
     df = pd.read_csv(app.config['WEIGHT_LOG_FOLDER']+filename)
     drop_columns = ["Time", "Measurement", "Unit", "Comment"]
 
@@ -492,12 +505,18 @@ def fetch_BW(date):
 
 
 def process_training_log():
-    filename = find_most_recent_file("TRAINING_LOG_FOLDER")    
+    username = "Tommy"
+    latest_training_csv = select_latest_csv("TRAINING_LOG_FOLDER")
+    latest_weight_json = select_latest_JSON("weight", username) # <---- this should point to latest json file
+
+
+    latest_weight_archive_location = os.path.join(app.config['LOG_ARCHIVE'], latest_weight_json)    
+    print(f"latest_weight_archive_location: {latest_weight_archive_location}")
     sorted_training_data = [] # list containing dicts of exercises, inside those dicts are lists of additional entries, which contain dicts of the details for that lift
     drop_columns = ["Distance", "Distance Unit", "Time"]
     
     # Drop all unrelated columns in dataframe + drop any sets of same details within same day + add columns for BW/SI
-    df = pd.read_csv(app.config['TRAINING_LOG_FOLDER']+filename)
+    df = pd.read_csv(app.config['TRAINING_LOG_FOLDER']+latest_training_csv)
     df.drop(drop_columns, axis='columns', inplace=True)
     df.drop_duplicates(keep="first", inplace=True, ignore_index=True)
     df["Bodyweight"] = None
@@ -506,10 +525,46 @@ def process_training_log():
     print(df)
         
     # use strength index calc to add a column and value to each remaining entry + Add bodyweights to each row. 
-    for row in df:
-        if row["Date"] #is within 7 day window: 
-        weight = fetch_BW(row["Date"])
-        if row 
+    datetime_format = "%Y-%m-%d"
+
+    for index, row in df.iterrows():
+        lift_date = row["Date"]
+        # Define the 7 day window as a list of dates:
+        lower_date = datetime.strptime(lift_date, datetime_format) - timedelta(days=3)
+        search_dates = []
+        matching_weight = [] 
+
+        for i in range(7):
+            search_dates.append((lower_date + timedelta(days=i)).strftime(datetime_format))
+
+        # Parse through the JSON archive file to check if there are any weight check-ins matching any of the dates. 
+        # if so, average all matching dates and return -- otherwise, return None: 
+        print(latest_weight_archive_location)
+        with open(latest_weight_archive_location) as reader:
+            # Load the JSON string file into variable as a python dict
+            WLog_entries_dict = json.loads(reader.read()) 
+            for pair in WLog_entries_dict["data"]:
+                if pair[0] == lift_date: 
+                    return pair[1] # if precise weight record found, return just that
+                
+                if pair[0] in search_dates:
+                    matching_weight.append(pair[1]) # otherwise, append close dates to lis
+        print(f"matching_weight final list: {matching_weight}\n\n")
+
+
+        if not matching_weight:
+            return None
+        
+        average_weight = sum(matching_weight) / len(matching_weight) # average the list of close weight records to return result
+        print(f"average weight for matching weights: {average_weight}")
+        return average_weight
+        
+        
+
+        
+
+
+            
 
             
     # Iterate through each row, finding the true heaviest weight lifted for each exercise.
@@ -557,7 +612,6 @@ def json_string_to_weight_plots(axis, filename):
         
         # filter each weight entry through the time periods to sort - if it's within scope of axis dates:   
         for pair in WLog_entries_dict["data"]:
-            #print(f"6m debugging - pair: {pair}")
             for i in range(len(axis)):
                 target_date = datetime.strptime(pair[0], datetime_format)
                 target_axis_date = datetime.strptime(axis[i], axis_format)
