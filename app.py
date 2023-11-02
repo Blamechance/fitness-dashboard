@@ -495,17 +495,41 @@ def process_weight_log():
 
     return "Entered process_csv."
 
-
-
-def fetch_BW(date):
-    """ input: This function takes a datetime object + filename to search within. 
-        returns: Returns the matching BW for that date (within a 7 day window - 3 days on either side of the date), if exists. 
-                If there is no matching date, it will return None. 
-    """
-    pass
-
-
 def process_training_log():
+    def calculate_SI(row):
+        """
+        This function takes a df row of the training data, and uses it to return a 
+        strength index score. 
+        
+        The key for the rep range factor represents the lower and upper rep count for each range. 
+        The value representing the factor to use in the calculation. 
+        if the rep range is outside of the rep_range_factor, then return "N/A". 
+        """
+        rep_range_factor = {
+            (1, 2):3.3,
+            (3,6):1.4,
+            (7,10):1,
+            (11,15):0.8,
+        }
+        
+        print(f"Row received in calc_si: {row}")
+        print(f'BW received: {row["Bodyweight"]}')
+        print(f'Reps received: {row["Reps"]}')
+
+        
+        if row["Reps"] > 15:
+            return "N/A"
+        
+        for key, value in rep_range_factor.items():
+            if row["Reps"] >= key[0] and row["Reps"] <= key[1]: 
+                factor = value
+                break   
+        SI_output = (row["Reps"] * row["Weight"]) / (row["Bodyweight"] * 10 * factor)
+        return SI_output
+        
+        
+    
+    
     username = "Tommy"
     latest_training_csv = select_latest_csv("TRAINING_LOG_FOLDER")
     latest_weight_json = select_latest_JSON("weight", username) 
@@ -542,24 +566,31 @@ def process_training_log():
             # Load the JSON string file into variable as a python dict
             WLog_entries_dict = json.loads(reader.read()) 
             for pair in WLog_entries_dict["data"]:
-                print(f"Checking if {pair[0]} in {search_dates}")
-                
                 if pair[0] == lift_date:
-                    print(f"Precise match found - returning {pair[1]}") 
                     return pair[1] # if precise weight record found, return just that
                 
                 if pair[0] in search_dates:
-                    matching_weight.append(pair[1]) # otherwise, append close dates to lis
-        print(f"matching_weight final list: {matching_weight}\n\n")
-
-
-        if not matching_weight:
-            return None
+                    matching_weight.append(pair[1]) # otherwise, append close dates to list
+                    
+        # If not weight data, skip appending BW + SI: 
+        if not matching_weight:    
+            row["Bodyweight"] = "N/A"
+            row["Strength Index"] = "N/A"
+            continue
+        # Otherwise, append found weight to df + calculate strength index. 
+        average_weight = round(sum(matching_weight) / len(matching_weight), 2) # average the list of close weight records to return result
+        # Use index to update correct cells: 
+        row["Bodyweight"] = average_weight  # Update the 'Bodyweight' of the current row
+        print(f"Row after appending BW: {row}")
         
-        average_weight = sum(matching_weight) / len(matching_weight) # average the list of close weight records to return result
-        print(f"average weight for matching weights: {average_weight}")
-        return average_weight
+        s_index = calculate_SI(row)
+        row["Strength Index"] = s_index
+    
+    print(f"df after append logic: \n{df}")
+
         
+        # At this point, matching_weight either contains None or a float
+        # append this to row as weight + use it for strength index calc.         
         
 
         
