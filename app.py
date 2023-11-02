@@ -368,7 +368,7 @@ def validate_CSV(file_name, type):
         
         #check if headers are as expected: 
         if file_headers == TRAINING_HEADERS:
-            print("File headers are valid - uploading file. ")
+            print("Training file headers are valid -  in submission. Uploading file. ")
             reader.close
             return True
 
@@ -438,7 +438,7 @@ def select_latest_JSON(data_type, username):
     date_list = []
 
     if data_type == "weight":
-        file_prefix = "/WeightLog_" 
+        file_prefix = "WeightLog_" 
 
     elif data_type == "training":
         file_prefix = "TBD" 
@@ -488,6 +488,7 @@ def process_weight_log():
 
     output_filename = f"WeightLog_username_{latest_entry_date}"
     output_filepath = os.path.join(app.config['LOG_ARCHIVE'], output_filename)
+    print(f"Output file path in weight is: {output_filepath}")
 
     with open(output_filepath, 'w', encoding="utf-8") as final_json_output:
         final_json_output.write(parsed_entries_string)
@@ -507,11 +508,9 @@ def fetch_BW(date):
 def process_training_log():
     username = "Tommy"
     latest_training_csv = select_latest_csv("TRAINING_LOG_FOLDER")
-    latest_weight_json = select_latest_JSON("weight", username) # <---- this should point to latest json file
+    latest_weight_json = select_latest_JSON("weight", username) 
+    latest_weight_archive_location = os.path.join(app.config['LOG_ARCHIVE'] , latest_weight_json)
 
-
-    latest_weight_archive_location = os.path.join(app.config['LOG_ARCHIVE'], latest_weight_json)    
-    print(f"latest_weight_archive_location: {latest_weight_archive_location}")
     sorted_training_data = [] # list containing dicts of exercises, inside those dicts are lists of additional entries, which contain dicts of the details for that lift
     drop_columns = ["Distance", "Distance Unit", "Time"]
     
@@ -539,12 +538,14 @@ def process_training_log():
 
         # Parse through the JSON archive file to check if there are any weight check-ins matching any of the dates. 
         # if so, average all matching dates and return -- otherwise, return None: 
-        print(latest_weight_archive_location)
         with open(latest_weight_archive_location) as reader:
             # Load the JSON string file into variable as a python dict
             WLog_entries_dict = json.loads(reader.read()) 
             for pair in WLog_entries_dict["data"]:
-                if pair[0] == lift_date: 
+                print(f"Checking if {pair[0]} in {search_dates}")
+                
+                if pair[0] == lift_date:
+                    print(f"Precise match found - returning {pair[1]}") 
                     return pair[1] # if precise weight record found, return just that
                 
                 if pair[0] in search_dates:
