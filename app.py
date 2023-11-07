@@ -505,6 +505,7 @@ def process_training_log():
         The value representing the factor to use in the calculation. 
         if the rep range is outside of the rep_range_factor, then return "N/A". 
         """
+        rep_count = df.at[index, "Reps"]
         rep_range_factor = {
             (1, 2):3.3,
             (3,6):1.4,
@@ -512,40 +513,34 @@ def process_training_log():
             (11,15):0.8,
         }
         
-        if row["Reps"] > 15:
-            return "N/A"
-        
-        for key, value in rep_range_factor.items():
-            if row["Reps"] >= key[0] and row["Reps"] <= key[1]: 
-                factor = value
-                break   
-        SI_output = (df.at[index, "Reps"] * df.at[index, "Weight"] * 10) / (df.at[index, "Bodyweight"] * factor)
-        return round(SI_output,2)
+        if rep_count < 15 and rep_count > 1:
+            for key, value in rep_range_factor.items(): # for each range in the rep_rage dict, what factor current reps should get: 
+                if rep_count >= key[0] and rep_count <= key[1]: 
+                    factor = value
+                    break
+                                
+            SI_output = (df.at[index, "Reps"] * df.at[index, "Weight"] * 10) / (df.at[index, "Bodyweight"] * factor)
+            return round(SI_output,2)
+        return 0
     
     username = "Tommy"
     latest_training_csv = select_latest_csv("TRAINING_LOG_FOLDER")
     latest_weight_json = select_latest_JSON("weight", username) 
     latest_weight_archive_location = os.path.join(app.config['LOG_ARCHIVE'] , latest_weight_json)
 
-    sorted_training_data = [] # list containing dicts of exercises, inside those dicts are lists of additional entries, which contain dicts of the details for that lift
+    true_weight_PRs = {} # list containing dicts of exercises that are the top PR's 
     drop_columns = ["Distance", "Distance Unit", "Time"]
     
     # Drop all unrelated columns in dataframe + drop any sets of same details within same day + add columns for BW/SI
     df = pd.read_csv(app.config['TRAINING_LOG_FOLDER']+latest_training_csv)
     df.drop(drop_columns, axis='columns', inplace=True)
     df.drop_duplicates(keep="first", inplace=True, ignore_index=True)
-    df["Bodyweight"] = None
-    df["Strength Index"] = None
-    
-    print(df)
         
     # use strength index calc to add a column and value to each remaining entry + Add bodyweights to each row. 
-    df_format_pandas = "%d/%m/%Y" # this should be the bodytracker format 
     df_format_archive = "%Y-%m-%d"
 
     for index, row in df.iterrows():
-        lift_date = datetime.strptime(row["Date"], df_format_pandas)
-        lift_date = datetime.strftime(lift_date, df_format_archive)
+        lift_date = datetime.strftime(datetime.strptime(row["Date"], df_format_archive), df_format_archive) # date as string
         
         # Define the 7 day window as a list of dates:
         lower_date = datetime.strptime(lift_date, df_format_archive) - timedelta(days=3)
@@ -571,9 +566,8 @@ def process_training_log():
                     
         # If not weight data, skip appending BW + SI: 
         if not matching_weight:    
-            df.at[index, 'Bodyweight'] = "N/A"
-            df.at[index, 'Strength Index'] = "N/A"
-            print(f"No match found, appending 'N/A' BW and SI fields of entry.")
+            df.at[index, 'Bodyweight'] = 0
+            df.at[index, 'Strength Index'] = 0
             continue
         
         # Otherwise, append found weight to df + calculate strength index. 
@@ -581,19 +575,25 @@ def process_training_log():
         df.at[index, 'Bodyweight'] = average_weight # Update the 'Bodyweight' of the current row      
         
         s_index = calculate_SI(index)
-        print(f"s_index to append: {s_index}")
         df.at[index, 'Strength Index'] = s_index # Update the 'Strength Index' of the current row      
-        
-    print(f"DF after processing is:\n")
-    print(df)
     
 
-    # Iterate through each row, finding the true heaviest weight lifted for each exercise.
+        # Check if the PR list contains a dict entry with the same key as this exerise - if not, append this one as {ex_name: entire_row}
+        if df.at[index, 'Exercise'] not in true_weight_PRs: 
+            true_weight_PRs[df.at[index, 'Exercise']] = row.to_dict()
+        
+        # if exists and current row is better than one in PR, replace it: 
+        for exercise, lift_data in true_weight_PRs.items():
+            if lift_data['Weight'] < df.at[index, 'Weight']:
+                lift_data[exercise] = row.to_dict() # Replace the value for the key in PR list: 
+
     
+    print(f"DF after processing is:\n")
+    print(df)
+    print(f"Final true_weight_PRs list: {true_weight_PRs}")
         
 
     # for each row entry see if it is a PR (i.e if it exists in sorted_training_data as a list item)
-    # calculate and add the SI, then append the whole dict as a list item to sorted_training_data. 
     # if not a PR (and hence a lifts exists in there already) append the lift's dict details as a list item, in the childrens data structure for that lift + add as entry strength index. 
     
     
