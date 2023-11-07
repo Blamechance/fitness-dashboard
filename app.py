@@ -496,7 +496,7 @@ def process_weight_log():
     return "Entered process_csv."
 
 def process_training_log():
-    def calculate_SI(row):
+    def calculate_SI(index):
         """
         This function takes a df row of the training data, and uses it to return a 
         strength index score. 
@@ -512,11 +512,6 @@ def process_training_log():
             (11,15):0.8,
         }
         
-        print(f"Row received in calc_si: {row}")
-        print(f'BW received: {row["Bodyweight"]}')
-        print(f'Reps received: {row["Reps"]}')
-
-        
         if row["Reps"] > 15:
             return "N/A"
         
@@ -524,11 +519,8 @@ def process_training_log():
             if row["Reps"] >= key[0] and row["Reps"] <= key[1]: 
                 factor = value
                 break   
-        SI_output = (row["Reps"] * row["Weight"]) / (row["Bodyweight"] * 10 * factor)
-        return SI_output
-        
-        
-    
+        SI_output = (df.at[index, "Reps"] * df.at[index, "Weight"] * 10) / (df.at[index, "Bodyweight"] * factor)
+        return round(SI_output,2)
     
     username = "Tommy"
     latest_training_csv = select_latest_csv("TRAINING_LOG_FOLDER")
@@ -548,17 +540,20 @@ def process_training_log():
     print(df)
         
     # use strength index calc to add a column and value to each remaining entry + Add bodyweights to each row. 
-    datetime_format = "%Y-%m-%d"
+    df_format_pandas = "%d/%m/%Y" # this should be the bodytracker format 
+    df_format_archive = "%Y-%m-%d"
 
     for index, row in df.iterrows():
-        lift_date = row["Date"]
+        lift_date = datetime.strptime(row["Date"], df_format_pandas)
+        lift_date = datetime.strftime(lift_date, df_format_archive)
+        
         # Define the 7 day window as a list of dates:
-        lower_date = datetime.strptime(lift_date, datetime_format) - timedelta(days=3)
+        lower_date = datetime.strptime(lift_date, df_format_archive) - timedelta(days=3)
         search_dates = []
         matching_weight = [] 
 
         for i in range(7):
-            search_dates.append((lower_date + timedelta(days=i)).strftime(datetime_format))
+            search_dates.append((lower_date + timedelta(days=i)).strftime(df_format_archive))
 
         # Parse through the JSON archive file to check if there are any weight check-ins matching any of the dates. 
         # if so, average all matching dates and return -- otherwise, return None: 
@@ -567,43 +562,36 @@ def process_training_log():
             WLog_entries_dict = json.loads(reader.read()) 
             for pair in WLog_entries_dict["data"]:
                 if pair[0] == lift_date:
-                    return pair[1] # if precise weight record found, return just that
+                    matching_weight.append(pair[1]) # otherwise, append close dates to list
+                    df.at[index, 'Bodyweight'] = pair[1] # if precise weight record found, return just that
+                    continue
                 
                 if pair[0] in search_dates:
                     matching_weight.append(pair[1]) # otherwise, append close dates to list
                     
         # If not weight data, skip appending BW + SI: 
         if not matching_weight:    
-            row["Bodyweight"] = "N/A"
-            row["Strength Index"] = "N/A"
+            df.at[index, 'Bodyweight'] = "N/A"
+            df.at[index, 'Strength Index'] = "N/A"
+            print(f"No match found, appending 'N/A' BW and SI fields of entry.")
             continue
+        
         # Otherwise, append found weight to df + calculate strength index. 
         average_weight = round(sum(matching_weight) / len(matching_weight), 2) # average the list of close weight records to return result
-        # Use index to update correct cells: 
-        row["Bodyweight"] = average_weight  # Update the 'Bodyweight' of the current row
-        print(f"Row after appending BW: {row}")
+        df.at[index, 'Bodyweight'] = average_weight # Update the 'Bodyweight' of the current row      
         
-        s_index = calculate_SI(row)
-        row["Strength Index"] = s_index
+        s_index = calculate_SI(index)
+        print(f"s_index to append: {s_index}")
+        df.at[index, 'Strength Index'] = s_index # Update the 'Strength Index' of the current row      
+        
+    print(f"DF after processing is:\n")
+    print(df)
     
-    print(f"df after append logic: \n{df}")
 
-        
-        # At this point, matching_weight either contains None or a float
-        # append this to row as weight + use it for strength index calc.         
-        
-
-        
-
-
-            
-
-            
     # Iterate through each row, finding the true heaviest weight lifted for each exercise.
+    
+        
 
-        
-      
-        
     # for each row entry see if it is a PR (i.e if it exists in sorted_training_data as a list item)
     # calculate and add the SI, then append the whole dict as a list item to sorted_training_data. 
     # if not a PR (and hence a lifts exists in there already) append the lift's dict details as a list item, in the childrens data structure for that lift + add as entry strength index. 
