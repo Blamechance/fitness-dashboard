@@ -80,7 +80,7 @@ def tommy():
 
     else: # GET method indicates user put address to route to the function.  
         print(f"Attempting to call weight graph...")
-        target_json_weight_file = find_most_current_weight_file("Tommy") # find the weight archive to load 
+        target_json_weight_file = select_latest_JSON("weight", "Tommy") # find the weight archive to load 
         
         # process most current JSON archive file with axis list to find average points to graph. 
         weight_graph_12m_points = json_string_to_weight_plots(x_axis_12, target_json_weight_file)
@@ -668,48 +668,5 @@ def json_string_to_weight_plots(axis, filename):
 
         return output_data
     
-
-def find_most_current_weight_file(username):
-    """ Takes username as argument, and returns the filename of the most current respective archive file. 
-    """
-
-    # formats to use max(), compare dates
-    datetime_format = "%Y-%m-%d" 
-
-    print("Entered fetch weight graph.")
-    # TODO: Add string input to function for username.  
-    # navigate to folder with logs and search for user's most recent weight log.
-    archive_folder = os.listdir(app.config['LOG_ARCHIVE'])
-    print(f"archive_folder = {archive_folder}")
-    
-    # Split file name, taking the name and date to check if it's more current, for relevant user. 
-    most_current_file = ""
-    for item in archive_folder:
-        filename_parts = item.split("_")
-        extracted_user = filename_parts[1]
-        
-        #manual assignment for testing: 
-        username  = "Tommy"
-
-        # if there is not yet a most current file and this matches user, take it as most current. 
-        if extracted_user == username and not most_current_file:
-            most_current_file = datetime.strptime(filename_parts[2], datetime_format)
-        
-        # Compare most current file with the target file, taking the most current:     
-        target_file = datetime.strptime(filename_parts[2], datetime_format)
-        if extracted_user == username and most_current_file < target_file: 
-            most_current_file = target_file
-    
-    # TODO: Using the max date, rebuild the filename string. 
-    most_current_file = f"WeightLog_{username}_{most_current_file.strftime(datetime_format)}"
-
-    print(f"Most current file found is: {most_current_file}")
-
-    return most_current_file 
-
-
-
-
-
 if __name__ == "__main__":
     app.run(debug=True)
