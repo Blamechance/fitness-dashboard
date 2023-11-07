@@ -4,8 +4,7 @@ import json
 import pandas as pd
 
 
-from datetime import date
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from boltons import timeutils
 
 from flask import Flask, flash, redirect, render_template, request, session, jsonify
@@ -26,10 +25,11 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.config['WEIGHT_LOG_FOLDER'] = 'files/weight_logs'
 app.config['TRAINING_LOG_FOLDER'] = 'files/training_logs'
 app.config['LOG_ARCHIVE'] = 'files/log_archive'
-app.config['MAX_CONTENT_PATH'] = 50000 #sample files average 20KB. 
+app.config['MAX_CONTENT_PATH'] = 50000 # sample files average 20KB. 
 
 #Define appropriate CSV headers + byte length for validate function: 
-TRAINING_HEADERS = "Date,Exercise,Category,Weight (kgs),Reps,Distance,Distance Unit,Time,Comment"
+TRAINING_HEADERS = "Date,Exercise,Category,Weight,Weight Unit,Reps,Distance,Distance Unit,Time,Comment"
+
 WEIGHT_HEADERS = "Date,Time,Measurement,Value,Unit,Comment"
 T_HEADER_LENGTH = len(TRAINING_HEADERS) #works on logic that chars are one byte
 W_HEADER_LENGTH = len(WEIGHT_HEADERS)
@@ -40,12 +40,12 @@ CURRENT_TIME_DATE = datetime.now()
 
 
 #return the current month as a digit
-current_month = int(CURRENT_TIME_DATE.strftime("%m")) #%m prints month as digit
+current_month = int(CURRENT_TIME_DATE.strftime("%m")) # %m prints month as digit
 current_year = int(CURRENT_TIME_DATE.strftime("%Y")) #e.g 2013, 2019 etc.
 current_day = int(CURRENT_TIME_DATE.strftime("%-d")) #e.g 1, 17, 31 etc. 
 last_year = int(current_year) - 1
 
-DATETIME_NOW = date(current_year, current_month, current_day) # use previous variables to build dateobject
+DATETIME_NOW = date(current_year, current_month, current_day) 
 
 print(f"DATETIME_NOW = {DATETIME_NOW}")
 
@@ -65,7 +65,6 @@ def athletes():
 def checkin():
     return render_template("checkin.html") 
 
-#Athelete pages - maybe they can share a single function to call? 
 @app.route('/tommy', methods=["GET", "POST"])
 def tommy():
     #Prepare items to pass to Weight Line Graph -- dates on axis + points to plot:   
@@ -81,8 +80,18 @@ def tommy():
 
     else: # GET method indicates user put address to route to the function.  
         print(f"Attempting to call weight graph...")
-        fetch_data_weight_graph("Tommy")
-        return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
+        target_json_weight_file = find_most_current_weight_file("Tommy") # find the weight archive to load 
+        
+        # process most current JSON archive file with axis list to find average points to graph. 
+        weight_graph_12m_points = json_string_to_weight_plots(x_axis_12, target_json_weight_file)
+        weight_graph_6m_points = json_string_to_weight_plots(x_axis_6, target_json_weight_file)
+        weight_graph_3m_points = json_string_to_weight_plots(x_axis_3, target_json_weight_file)
+                
+        return render_template("tommy.html",
+                               x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6,
+                                weight_graph_12m_points = weight_graph_12m_points,
+                                weight_graph_6m_points = weight_graph_6m_points,
+                                weight_graph_3m_points = weight_graph_3m_points) 
             
 @app.route('/nathan', methods=["GET", "POST"])
 def nathan():
@@ -275,20 +284,14 @@ def fetch3mXAxis():
     prev_3_months.reverse()
     return prev_3_months
 
-
-@app.route('/volume_analysis', methods=["POST"])
-def volume_analysis():
-    print("Entered volume_analysis.")
-    target_period = request.get_json("userPeriod") #this is not fetching the option properly.... 
-    print("volume_analysis print of target_period: ", target_period)
-    return jsonify(target_period)
-    
     
 @app.route('/upload', methods=["POST"])
 def upload_file():
     """
     This function receives the file attached to the form submission for processing. 
     If file is found to not be of .csv/.txt or data validation fails, then file is deleted and error code is returned. 
+
+    TODO: Pass an argument to process_weight_log() that contains username. 
     """
     #Received object with form data is a list-like structure (immutable dict): 
     if len(request.form.getlist("uploadType")) == 0: # null check -- using string literal as JSON "none" was received
@@ -308,12 +311,13 @@ def upload_file():
         print("File name: ", file_name)
         #save to files folder -- extend this logic to ensure no duplicates: 
         uploaded_file.save(os.path.join(app.config['TRAINING_LOG_FOLDER'], file_name))
+        
         if validate_CSV(file_name, submission_type) == False:
             print("Bad upload - validation failed. Deleting file.")
             os.remove((os.path.join(app.config['TRAINING_LOG_FOLDER'], file_name)))
             return "File format error. Please export your file and try again. ", 400
         
-        process_weight_log()
+        process_training_log()
         return "Server file upload Success."        
     
     # Detect weight file and call processing function
@@ -364,7 +368,7 @@ def validate_CSV(file_name, type):
         
         #check if headers are as expected: 
         if file_headers == TRAINING_HEADERS:
-            print("File headers are valid - uploading file. ")
+            print("Training file headers are valid -  in submission. Uploading file. ")
             reader.close
             return True
 
@@ -395,46 +399,29 @@ def validate_CSV(file_name, type):
             return False 
     return False
     
+def select_latest_csv(data_type):
+    log_dir = os.listdir(app.config[f"{data_type}"])    
+    input_format = "%Y_%m_%d_%H_%M_%S" 
+    output_iso_format = "%Y-%m-%dT%H:%M:%S"
+    file_suffix = ".csv"
+    date_list = {} 
 
+    if data_type == "WEIGHT_LOG_FOLDER":
+        file_prefix = "/FitNotes_BodyTracker_Export_" 
 
-def process_weight_log():
-    """
-        This function is called when the user prompts a button on the check-in page of website. 
-        - All sheets in the related file directories are processed to pull out relevant data into a  {"date":"weight"} JSON list. 
-        - These JSON files will be backed up on the file system to operate as a "snapshot". 
-        - Eventually, these snapshots will be viewable, and recoverable.         
-    """
-    #TODO: Might need to revisit after working on sessions and user authentication. 
-    #NOTE: This function will delete existing copies of the json file, so insert a backup function before proceeding
+    elif data_type == "TRAINING_LOG_FOLDER":
+        file_prefix = "/FitNotes_Export_" 
 
-    #Create a JSON file to populate in the archive folder, 
-    #TODO: Upload to/create within folder according to username
-    temp_file = "temp_processing.json"
-    weight_history = {}
-    temp_file_location = os.path.join(app.config['LOG_ARCHIVE'], temp_file)
-
-    #create temp file the existing json log file. 
-    with open(temp_file_location, 'w', encoding="utf-8") as weight_history_log:
-        weight_history_log.write(json.dumps(weight_history))
-
-    #Start processing the CSV's, extracting relevant data into a python dictionary.
-     
 
     #Check for most recent file, in weight log folder. Use that most recent folder to create JSON string archive file:
     # 1. Slice date sections of all filenames in directory. 
     # 2. Convert to datetime compatible for comparison with max()
     # Once max file found, save it's name. 
-    # TODO: Need to integrate username checking logic. 
-    weight_logs_directory = os.listdir(app.config['WEIGHT_LOG_FOLDER'])    
 
-    input_format = "%Y_%m_%d_%H_%M_%S" 
-    output_iso_format = "%Y-%m-%d"
-    file_prefix = "/FitNotes_BodyTracker_Export_" 
-    file_suffix = ".csv"
-    date_list = {} 
+    #NOTE: Wrap in a try-except so the except can delete temp file on error.
+    #TODO: Need to integrate username checking logic. 
 
-
-    for item in weight_logs_directory: 
+    for item in log_dir: 
         sliced_filename = item[item.index("202"):item.index(".csv")] #index between year and csv (inclusive of year but not csv)
         unformatted_date = datetime.strptime(sliced_filename, input_format)
         iso_date = unformatted_date.strftime(output_iso_format)
@@ -442,20 +429,53 @@ def process_weight_log():
 
 
     latest_fitnotes_file = str(max(date_list)) # use value (date in iso) for max, but pass in the key (date in file's format) to variable
+    filename = f"{file_prefix}{latest_fitnotes_file}{file_suffix}"
+    return filename
 
-    # drop irrelevant columsn in target file, creating a python dictionary of {date:weight} 
+def select_latest_JSON(data_type, username):
+    log_dir = os.listdir(app.config['LOG_ARCHIVE'])
+    datetime_format = "%Y-%m-%d"
+    date_list = []
+
+    if data_type == "weight":
+        file_prefix = "WeightLog_" 
+
+    elif data_type == "training":
+        file_prefix = "TBD" 
+
+    for item in log_dir: 
+        sliced_filename = item[item.index("202"):] #index between year and csv (inclusive of year but not csv)
+        date_list.append(sliced_filename)
+    
+    filename = f"{file_prefix}{username}_{str(max(date_list))}"
+    return filename
+
+    
+
+def process_weight_log():
+
+    """
+        This function is called when the user prompts a button on the check-in page of website. 
+        - All sheets in the related file directories are processed to pull out relevant data into a  {"date":"weight"} JSON list. 
+        - These JSON files will be backed up on the file system to operate as a "snapshot" in the archive folder. 
+    """
+    # Parse for non-bodyweight rows to delete,
+    # then drop irrelevant column in target file, creating a python dictionary of {date:weight} 
+    # build file name using the date of the most recent submitted fitnotes sheet
+    filename = select_latest_csv("WEIGHT_LOG_FOLDER")
+    df = pd.read_csv(app.config['WEIGHT_LOG_FOLDER']+filename)
     drop_columns = ["Time", "Measurement", "Unit", "Comment"]
 
-    # build file name using the date of the most recent submitted fitnotes sheet
-    filename = f"{file_prefix}{latest_fitnotes_file}{file_suffix}"
-    df = pd.read_csv(app.config['WEIGHT_LOG_FOLDER']+filename)
 
-    # use pandas to extract log entry dates and weights
+
+    # use pandas to extract log entry dates and weights, but only if it's bodyweight data
+    df = df.loc[df["Measurement"] == "Bodyweight" ]
     cleaned_df = df.drop(drop_columns, axis='columns')
-    parsed_entries_string= cleaned_df.to_json(orient='split') #argument to convert output to json string
+    parsed_entries_string = cleaned_df.to_json(orient='split') #argument to convert output to json string
 
     # load that data into a string of dates. 
     loaded_entries = json.loads(parsed_entries_string)
+    print(f"loaded_entries type: {type(loaded_entries)}")
     log_entry_data = loaded_entries["data"]
     log_entry_dates = []
 
@@ -468,17 +488,118 @@ def process_weight_log():
 
     output_filename = f"WeightLog_username_{latest_entry_date}"
     output_filepath = os.path.join(app.config['LOG_ARCHIVE'], output_filename)
+    print(f"Output file path in weight is: {output_filepath}")
 
     with open(output_filepath, 'w', encoding="utf-8") as final_json_output:
-        final_json_output.write(json.dumps(parsed_entries_string))
-    
-    # clean up temp file and return:
-    os.remove(temp_file_location)
+        final_json_output.write(parsed_entries_string)
 
     return "Entered process_csv."
 
+def process_training_log():
+    def calculate_SI(index):
+        """
+        This function takes a df row of the training data, and uses it to return a 
+        strength index score. 
+        
+        The key for the rep range factor represents the lower and upper rep count for each range. 
+        The value representing the factor to use in the calculation. 
+        if the rep range is outside of the rep_range_factor, then return "N/A". 
+        """
+        rep_range_factor = {
+            (1, 2):3.3,
+            (3,6):1.4,
+            (7,10):1,
+            (11,15):0.8,
+        }
+        
+        if row["Reps"] > 15:
+            return "N/A"
+        
+        for key, value in rep_range_factor.items():
+            if row["Reps"] >= key[0] and row["Reps"] <= key[1]: 
+                factor = value
+                break   
+        SI_output = (df.at[index, "Reps"] * df.at[index, "Weight"] * 10) / (df.at[index, "Bodyweight"] * factor)
+        return round(SI_output,2)
+    
+    username = "Tommy"
+    latest_training_csv = select_latest_csv("TRAINING_LOG_FOLDER")
+    latest_weight_json = select_latest_JSON("weight", username) 
+    latest_weight_archive_location = os.path.join(app.config['LOG_ARCHIVE'] , latest_weight_json)
 
-def json_string_to_graph_points(axis, filename):
+    sorted_training_data = [] # list containing dicts of exercises, inside those dicts are lists of additional entries, which contain dicts of the details for that lift
+    drop_columns = ["Distance", "Distance Unit", "Time"]
+    
+    # Drop all unrelated columns in dataframe + drop any sets of same details within same day + add columns for BW/SI
+    df = pd.read_csv(app.config['TRAINING_LOG_FOLDER']+latest_training_csv)
+    df.drop(drop_columns, axis='columns', inplace=True)
+    df.drop_duplicates(keep="first", inplace=True, ignore_index=True)
+    df["Bodyweight"] = None
+    df["Strength Index"] = None
+    
+    print(df)
+        
+    # use strength index calc to add a column and value to each remaining entry + Add bodyweights to each row. 
+    df_format_pandas = "%d/%m/%Y" # this should be the bodytracker format 
+    df_format_archive = "%Y-%m-%d"
+
+    for index, row in df.iterrows():
+        lift_date = datetime.strptime(row["Date"], df_format_pandas)
+        lift_date = datetime.strftime(lift_date, df_format_archive)
+        
+        # Define the 7 day window as a list of dates:
+        lower_date = datetime.strptime(lift_date, df_format_archive) - timedelta(days=3)
+        search_dates = []
+        matching_weight = [] 
+
+        for i in range(7):
+            search_dates.append((lower_date + timedelta(days=i)).strftime(df_format_archive))
+
+        # Parse through the JSON archive file to check if there are any weight check-ins matching any of the dates. 
+        # if so, average all matching dates and return -- otherwise, return None: 
+        with open(latest_weight_archive_location) as reader:
+            # Load the JSON string file into variable as a python dict
+            WLog_entries_dict = json.loads(reader.read()) 
+            for pair in WLog_entries_dict["data"]:
+                if pair[0] == lift_date:
+                    matching_weight.append(pair[1]) # otherwise, append close dates to list
+                    df.at[index, 'Bodyweight'] = pair[1] # if precise weight record found, return just that
+                    continue
+                
+                if pair[0] in search_dates:
+                    matching_weight.append(pair[1]) # otherwise, append close dates to list
+                    
+        # If not weight data, skip appending BW + SI: 
+        if not matching_weight:    
+            df.at[index, 'Bodyweight'] = "N/A"
+            df.at[index, 'Strength Index'] = "N/A"
+            print(f"No match found, appending 'N/A' BW and SI fields of entry.")
+            continue
+        
+        # Otherwise, append found weight to df + calculate strength index. 
+        average_weight = round(sum(matching_weight) / len(matching_weight), 2) # average the list of close weight records to return result
+        df.at[index, 'Bodyweight'] = average_weight # Update the 'Bodyweight' of the current row      
+        
+        s_index = calculate_SI(index)
+        print(f"s_index to append: {s_index}")
+        df.at[index, 'Strength Index'] = s_index # Update the 'Strength Index' of the current row      
+        
+    print(f"DF after processing is:\n")
+    print(df)
+    
+
+    # Iterate through each row, finding the true heaviest weight lifted for each exercise.
+    
+        
+
+    # for each row entry see if it is a PR (i.e if it exists in sorted_training_data as a list item)
+    # calculate and add the SI, then append the whole dict as a list item to sorted_training_data. 
+    # if not a PR (and hence a lifts exists in there already) append the lift's dict details as a list item, in the childrens data structure for that lift + add as entry strength index. 
+    
+    
+    
+
+def json_string_to_weight_plots(axis, filename):
     """ This function takes a filename string that points to a JSON string file and returns a python list object.
         Args: (list of axis ticks), (JSON file to use's name)
     
@@ -494,9 +615,63 @@ def json_string_to_graph_points(axis, filename):
                 - If it's between calculated points, it will instead average the two closest calcualted points. 
         
     """
-    pass
+    datetime_format = "%Y-%m-%d"
+    axis_format = "%d %b, %Y" 
+    file_location = os.path.join(app.config['LOG_ARCHIVE'], filename)    
+    
+    with open(file_location) as reader:
+        # Load the JSON string file into variable as a python dict
+        WLog_entries_dict = json.loads(reader.read()) 
+        output_data = []
+        input_weight_data = {} # to sort weight entries into. {axis point: [list of dates belonging to that window]}
+        min_date =  datetime.strptime(axis[0], axis_format) - (datetime.strptime(axis[1], axis_format) - datetime.strptime(axis[0], axis_format)) # Find the increment distance for this axis, and do not further than one decrement from first axis. 
 
-def fetch_data_weight_graph(username): # add a name argument to find correct user. 
+        for axis_date in axis: # take axis input as the keys for new dict -- values will a list bucket for all appropriate entries
+            date = datetime.strptime(axis_date, axis_format)
+            input_weight_data[date] = []
+        
+        # filter each weight entry through the time periods to sort - if it's within scope of axis dates:   
+        for pair in WLog_entries_dict["data"]:
+            for i in range(len(axis)):
+                target_date = datetime.strptime(pair[0], datetime_format)
+                target_axis_date = datetime.strptime(axis[i], axis_format)
+
+                if (target_date >= min_date and
+                    target_date <= target_axis_date):
+                        input_weight_data[target_axis_date].append(pair[1])
+                        break
+        
+        # check if each axis has a list, if not, generate an average value
+        previous_list = [] # holder for previous valid data, to swap for any zero lists.
+
+        if not any(input_weight_data.values()): # no matching data points at all, return empty list.
+            print(f"No relevant data found in file for graph!") 
+            return [0] * len(axis)
+
+        for values in input_weight_data.values(): # take at least one data point to fill zero list replacement variable. 
+            if values:
+                previous_list = values.copy()
+                break 
+
+        for key, values in input_weight_data.items(): # update prev valid list var, if valid
+            if values:
+                previous_list = values.copy()
+            
+            elif not values: # if empty list detected, take previous valid list as estimate. 
+                input_weight_data[key] = previous_list.copy()
+
+
+        # average lists to find final list of values to return:
+        for value in input_weight_data.values():                
+            average_for_period = sum(value) / len(value)
+            output_data.append(round(average_for_period, 2))
+
+        return output_data
+    
+
+def find_most_current_weight_file(username):
+    """ Takes username as argument, and returns the filename of the most current respective archive file. 
+    """
 
     # formats to use max(), compare dates
     datetime_format = "%Y-%m-%d" 
@@ -529,13 +704,8 @@ def fetch_data_weight_graph(username): # add a name argument to find correct use
     most_current_file = f"WeightLog_{username}_{most_current_file.strftime(datetime_format)}"
 
     print(f"Most current file found is: {most_current_file}")
-        
-    # once all files are parsed and most current file is found, use that file to fetch graph points. 
-    # json_string_to_graph_points()
-    
-    # separate into functions (?). 
 
-    return
+    return most_current_file 
 
 
 
