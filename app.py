@@ -576,16 +576,18 @@ def process_training_log():
         
         s_index = calculate_SI(index)
         df.at[index, 'Strength Index'] = s_index # Update the 'Strength Index' of the current row      
-    
 
         # Check if the PR list contains a dict entry with the same key as this exerise - if not, append this one as {ex_name: entire_row}
         if df.at[index, 'Exercise'] not in true_weight_PRs: 
             true_weight_PRs[df.at[index, 'Exercise']] = row.to_dict()
         
-        # if exists and current row is better than one in PR, replace it: 
-        for exercise, lift_data in true_weight_PRs.items():
-            if lift_data['Weight'] < df.at[index, 'Weight']:
-                lift_data[exercise] = row.to_dict() # Replace the value for the key in PR list: 
+        # if exists and current row is better than one in PR, replace it:         
+        for exercise, lift_data in true_weight_PRs.items():            
+            if df.at[index, 'Weight'] > lift_data["Weight"] and df.at[index, 'Exercise'] == exercise: 
+                print(f"Comparing if: {df.at[index, 'Weight']} > {lift_data['Weight']}")
+                print(f"Better record found. Updating {lift_data} to {row.to_dict}")
+                true_weight_PRs[exercise] = row.to_dict()  # Replace the value for the key in PR list:  
+                
 
     
     print(f"DF after processing is:\n")
