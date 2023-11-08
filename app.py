@@ -25,6 +25,7 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.config['WEIGHT_LOG_FOLDER'] = 'files/weight_logs'
 app.config['TRAINING_LOG_FOLDER'] = 'files/training_logs'
 app.config['LOG_ARCHIVE'] = 'files/log_archive'
+app.config['HEAVIEST_PRS'] = 'files/training_tabulator_data' # tabulator table data for heaviest PRs
 app.config['MAX_CONTENT_PATH'] = 50000 # sample files average 20KB. 
 
 #Define appropriate CSV headers + byte length for validate function: 
@@ -86,7 +87,7 @@ def tommy():
         weight_graph_12m_points = json_string_to_weight_plots(x_axis_12, target_json_weight_file)
         weight_graph_6m_points = json_string_to_weight_plots(x_axis_6, target_json_weight_file)
         weight_graph_3m_points = json_string_to_weight_plots(x_axis_3, target_json_weight_file)
-                
+                        
         return render_template("tommy.html",
                                x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6,
                                 weight_graph_12m_points = weight_graph_12m_points,
@@ -317,7 +318,16 @@ def upload_file():
             os.remove((os.path.join(app.config['TRAINING_LOG_FOLDER'], file_name)))
             return "File format error. Please export your file and try again. ", 400
         
-        process_training_log()
+        heaviest_prs_data = process_training_log()
+        
+        # Save the processed training data on upload as JSON, in training_tables folder: 
+
+        output_filename = f"HeaviestPRs_username_{DATETIME_NOW}"
+        output_filepath = os.path.join(app.config['HEAVIEST_PRS'], output_filename)
+
+        with open(output_filepath, 'w', encoding="utf-8") as output:
+            output.write(json.dumps(heaviest_prs_data))
+
         return "Server file upload Success."        
     
     # Detect weight file and call processing function
@@ -536,9 +546,14 @@ def process_training_log():
     df.drop(drop_columns, axis='columns', inplace=True)
     df.drop_duplicates(keep="first", inplace=True, ignore_index=True)
         
-    # use strength index calc to add a column and value to each remaining entry + Add bodyweights to each row. 
     df_format_archive = "%Y-%m-%d"
 
+    # This loop iterates through each of the training log data rows to do the following: 
+    # 1. Takes the date the lift was executed to seach through the most recent weight log archive file. 
+    #    Any weight entries for dates +/-3 days from lift date, get averaged and appended to the row.
+    # 2. Using the user weight and weight lifted, calculate a strength index. 
+    # 3. If no matches at all, set BW + Strength Index to 00. 
+    
     for index, row in df.iterrows():
         lift_date = datetime.strftime(datetime.strptime(row["Date"], df_format_archive), df_format_archive) # date as string
         
@@ -584,21 +599,14 @@ def process_training_log():
         # if exists and current row is better than one in PR, replace it:         
         for exercise, lift_data in true_weight_PRs.items():            
             if df.at[index, 'Weight'] > lift_data["Weight"] and df.at[index, 'Exercise'] == exercise: 
-                print(f"Comparing if: {df.at[index, 'Weight']} > {lift_data['Weight']}")
-                print(f"Better record found. Updating {lift_data} to {row.to_dict}")
                 true_weight_PRs[exercise] = row.to_dict()  # Replace the value for the key in PR list:  
                 
 
+    heaviest_weight_prs = []
+    [heaviest_weight_prs.append(value) for value in true_weight_PRs.values()]
     
-    print(f"DF after processing is:\n")
-    print(df)
-    print(f"Final true_weight_PRs list: {true_weight_PRs}")
+    return heaviest_weight_prs
         
-
-    # for each row entry see if it is a PR (i.e if it exists in sorted_training_data as a list item)
-    # if not a PR (and hence a lifts exists in there already) append the lift's dict details as a list item, in the childrens data structure for that lift + add as entry strength index. 
-    
-    
     
 
 def json_string_to_weight_plots(axis, filename):
