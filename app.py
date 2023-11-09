@@ -569,7 +569,7 @@ def process_training_log():
     df['Comment'] = df['Comment'].fillna("N/A") 
     df['Weight'] = df['Weight'].fillna(0) 
     df['Weight Unit'] = df['Weight Unit'].fillna("kgs") 
-    df['Reps'] = df['Reps'].fillna(0) 
+    df['Reps'] = df['Weight'].fillna(0) 
 
 
         
