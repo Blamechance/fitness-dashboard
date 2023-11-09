@@ -87,12 +87,17 @@ def tommy():
         weight_graph_12m_points = json_string_to_weight_plots(x_axis_12, target_json_weight_file)
         weight_graph_6m_points = json_string_to_weight_plots(x_axis_6, target_json_weight_file)
         weight_graph_3m_points = json_string_to_weight_plots(x_axis_3, target_json_weight_file)
-                        
+        highest_W_table  = fetch_training_table_data("Tommy")
+        
+        
+        # Fetch table data to serve to user page: 
+        
         return render_template("tommy.html",
                                x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6,
                                 weight_graph_12m_points = weight_graph_12m_points,
                                 weight_graph_6m_points = weight_graph_6m_points,
-                                weight_graph_3m_points = weight_graph_3m_points) 
+                                weight_graph_3m_points = weight_graph_3m_points,
+                                highest_W_table = highest_W_table) 
             
 @app.route('/nathan', methods=["GET", "POST"])
 def nathan():
@@ -101,6 +106,17 @@ def nathan():
 @app.route('/raymond', methods=["GET", "POST"])
 def raymond():
     return render_template("raymond.html") 
+
+
+def fetch_training_table_data(username): 
+    highest_W_file = select_latest_JSON("HeaviestPRs", "Tommy")
+    highest_W_path = os.path.join(app.config['HEAVIEST_PRS'], highest_W_file)
+    
+    with open(highest_W_path, 'r') as file:
+        highest_W_data = file.read()
+        
+    return highest_W_data
+
 
 
 def fetch_days_in_month(input_month):
@@ -113,7 +129,8 @@ def fetch_days_in_month(input_month):
         return 31
     return 28
 
-# Following date functions should be refactored to decrement only before commiting a transaction -- currently it's not atomic. 
+# Following date functions should be refactored to decrement only before commiting a transaction.
+# I discovered timedelta after having already written it... refactor on to-do list.  
 
 def fetch12mXAxis():
     prev_12_months = []
@@ -443,15 +460,16 @@ def select_latest_csv(data_type):
     return filename
 
 def select_latest_JSON(data_type, username):
-    log_dir = os.listdir(app.config['LOG_ARCHIVE'])
     datetime_format = "%Y-%m-%d"
     date_list = []
 
     if data_type == "weight":
+        log_dir = os.listdir(app.config['LOG_ARCHIVE'])
         file_prefix = "WeightLog_" 
 
-    elif data_type == "training":
-        file_prefix = "TBD" 
+    elif data_type == "HeaviestPRs":
+        log_dir = os.listdir(app.config['HEAVIEST_PRS'])
+        file_prefix = "HeaviestPRs_" 
 
     for item in log_dir: 
         sliced_filename = item[item.index("202"):] #index between year and csv (inclusive of year but not csv)
@@ -561,6 +579,7 @@ def process_training_log():
         lower_date = datetime.strptime(lift_date, df_format_archive) - timedelta(days=3)
         search_dates = []
         matching_weight = [] 
+        heaviest_weight_prs = []
 
         for i in range(7):
             search_dates.append((lower_date + timedelta(days=i)).strftime(df_format_archive))
@@ -602,10 +621,9 @@ def process_training_log():
                 true_weight_PRs[exercise] = row.to_dict()  # Replace the value for the key in PR list:  
                 
 
-    heaviest_weight_prs = []
     [heaviest_weight_prs.append(value) for value in true_weight_PRs.values()]
     
-    return heaviest_weight_prs
+    return heaviest_weight_prs 
         
     
 

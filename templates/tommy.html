@@ -103,20 +103,14 @@
 
 
 <h3> Training Data Analysis:</h3>
-<div id="training-data-table"> </div>
+<div id="training-table-highestW"> </div>
 
 <script>
-    var tabledata = [
-        {index:1, exercise:"Flat Barbell Bench", exWeight:"75", reps:"5", strengthIndex:"68.5", bodyweight:"72", date:"14/05/2023", comment:"Touch and go reps", },
-        {index:2, exercise:"Overhead Barbell Press", exWeight:"57.5",  reps:"3", strengthIndex:"65.5", bodyweight:"75", date:"14/05/1982", comment:"Using wraps"},
-        {index:3, exercise:"Squat", exWeight:"80",  reps:"8", strengthIndex:"55.5", bodyweight:"73", date:"22/05/1982", comment:"ATG depth"},
-        {index:4, exercise:"Deadlift", exWeight:"120",  reps:"1", strengthIndex:"40.5", bodyweight:"74", ddateob:"01/08/1980", comment:"Raw lift"},
-        {index:5, exercise:"Barbell Rows", exWeight:"65",  reps:"10", strengthIndex:"42.5", bodyweight:"70.8", date:"31/01/1999", comment:"RP style rows"},
-    ];
+    var tabledata = {{ highest_W_table | tojson }}
 
  //create Tabulator on DOM element with id "example-table"
        
-    var table = new Tabulator("#training-data-table", {
+    var table = new Tabulator("#training-table-highestW", {
         height:205, // set height of table (in CSS or here), this enables the Virtual DOM and improves render speed dramatically (can be any valid css height value)
         data:tabledata, //assign data to table
         layout:"fitColumns", //fit columns to width of table (optional)
