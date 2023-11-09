@@ -77,7 +77,6 @@ def tommy():
         return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
 
     else: # GET method indicates user put address to route to the function.  
-        print(f"Attempting to call weight graph...")
         target_json_weight_file = select_latest_JSON("weight", "Tommy") # find the weight archive to load 
         
         # process most current JSON archive file with axis list to find average points to graph. 
@@ -545,7 +544,8 @@ def process_training_log():
                 if rep_count >= key[0] and rep_count <= key[1]: 
                     factor = value
                     break
-                                
+            rep_count = df.loc[index]
+            print(f"repcount: {rep_count}")
             SI_output = (df.at[index, "Reps"] * df.at[index, "Weight"] * 10) / (df.at[index, "Bodyweight"] * factor)
             return round(SI_output,2)
         return 0
@@ -568,7 +568,7 @@ def process_training_log():
     df['Comment'] = df['Comment'].fillna("N/A") 
     df['Weight'] = df['Weight'].fillna(0) 
     df['Weight Unit'] = df['Weight Unit'].fillna("kgs") 
-    df['Reps'] = df['Weight'].fillna(0) 
+    df['Reps'] = df['Reps'].fillna(0) 
 
 
         
@@ -619,6 +619,8 @@ def process_training_log():
         s_index = calculate_SI(index)
         df.at[index, 'Strength Index'] = s_index     
 
+    for index, row in df.iterrows():
+       ### 1. Process for heaviest weight PRs: 
         # Check if the PR list contains a dict entry with the same key as this exerise - if not, append this one as {ex_name: entire_row}
         if df.at[index, 'Exercise'] not in true_weight_PRs: 
             true_weight_PRs[df.at[index, 'Exercise']] = row.to_dict()
@@ -633,6 +635,10 @@ def process_training_log():
                 true_weight_PRs[exercise] = row.to_dict()   
 
     [heaviest_weight_prs.append(value) for value in true_weight_PRs.values()]
+
+    ### 2. Process for Highest Strength Index Lifts:
+
+    ### 3. All lifts, unsorted.  
     
     return heaviest_weight_prs 
         
