@@ -5,13 +5,10 @@ import pandas as pd
 
 
 from datetime import date, datetime, timedelta
-from boltons import timeutils
 
 from flask import Flask, flash, redirect, render_template, request, session, jsonify
 from flask_session import Session
 from json import loads, dumps
-from tempfile import mkdtemp
-from werkzeug.security import check_password_hash, generate_password_hash
 
 
 # Configure application - this lets flask know to use the "app.py" file
@@ -109,13 +106,15 @@ def raymond():
 
 
 def fetch_training_table_data(username): 
+    """
+        Fetchs the training table data and returns it as a JSON object. 
+    """
     highest_W_file = select_latest_JSON("HeaviestPRs", "Tommy")
     highest_W_path = os.path.join(app.config['HEAVIEST_PRS'], highest_W_file)
     
     with open(highest_W_path, 'r') as file:
-        highest_W_data = file.read()
-        
-    return highest_W_data
+        highest_W_data = json.load(file)   
+        return json.dumps(highest_W_data)
 
 
 
