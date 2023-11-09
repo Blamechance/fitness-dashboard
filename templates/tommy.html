@@ -106,7 +106,7 @@
 <div id="training-table-highestW"> </div>
 
 <script>
-    var tabledata = {{ highest_W_table | tojson }}
+    var tabledata = JSON.parse('{{ highest_W_table | tojson }}')
 
  //create Tabulator on DOM element with id "example-table"
        

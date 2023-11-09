@@ -555,6 +555,7 @@ def process_training_log():
     latest_training_csv = select_latest_csv("TRAINING_LOG_FOLDER")
     latest_weight_json = select_latest_JSON("weight", username) 
     latest_weight_archive_location = os.path.join(app.config['LOG_ARCHIVE'] , latest_weight_json)
+    df_format_archive = "%Y-%m-%d"
 
     true_weight_PRs = {} # list containing dicts of exercises that are the top PR's 
     drop_columns = ["Distance", "Distance Unit", "Time"]
@@ -563,8 +564,15 @@ def process_training_log():
     df = pd.read_csv(app.config['TRAINING_LOG_FOLDER']+latest_training_csv)
     df.drop(drop_columns, axis='columns', inplace=True)
     df.drop_duplicates(keep="first", inplace=True, ignore_index=True)
+    
+    # convert all NaN fields to a generic datatypes for easier handling 
+    df['Comment'] = df['Comment'].fillna("N/A") 
+    df['Weight'] = df['Weight'].fillna(0) 
+    df['Weight Unit'] = df['Weight Unit'].fillna("kgs") 
+    df['Reps'] = df['Reps'].fillna(0) 
+
+
         
-    df_format_archive = "%Y-%m-%d"
 
     # This loop iterates through each of the training log data rows to do the following: 
     # 1. Takes the date the lift was executed to seach through the most recent weight log archive file. 
@@ -608,18 +616,22 @@ def process_training_log():
         average_weight = round(sum(matching_weight) / len(matching_weight), 2) # average the list of close weight records to return result
         df.at[index, 'Bodyweight'] = average_weight # Update the 'Bodyweight' of the current row      
         
+        # Update the 'Strength Index' of the current row  
         s_index = calculate_SI(index)
-        df.at[index, 'Strength Index'] = s_index # Update the 'Strength Index' of the current row      
+        df.at[index, 'Strength Index'] = s_index     
 
         # Check if the PR list contains a dict entry with the same key as this exerise - if not, append this one as {ex_name: entire_row}
         if df.at[index, 'Exercise'] not in true_weight_PRs: 
             true_weight_PRs[df.at[index, 'Exercise']] = row.to_dict()
         
-        # if exists and current row is better than one in PR, replace it:         
-        for exercise, lift_data in true_weight_PRs.items():            
-            if df.at[index, 'Weight'] > lift_data["Weight"] and df.at[index, 'Exercise'] == exercise: 
-                true_weight_PRs[exercise] = row.to_dict()  # Replace the value for the key in PR list:  
-                
+        # if exists and current row is better than one in PR, replace it. Table data will hold date lift was first hit:         
+        for exercise, lift_data in true_weight_PRs.items():    
+            #only replace row if more reps and more weight, or same weight and higher reps        
+            if df.at[index, 'Weight'] > lift_data["Weight"] and df.at[index, 'Exercise'] == exercise:
+                true_weight_PRs[exercise] = row.to_dict()
+                      
+            elif df.at[index, 'Weight'] == lift_data["Weight"] and df.at[index, 'Exercise'] == exercise and df.at[index, "Reps"] > lift_data["Reps"]: 
+                true_weight_PRs[exercise] = row.to_dict()   
 
     [heaviest_weight_prs.append(value) for value in true_weight_PRs.values()]
     
