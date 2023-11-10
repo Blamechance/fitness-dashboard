@@ -128,8 +128,6 @@ def fetch_days_in_month(input_month):
     return 28
 
 # Following date functions should be refactored to decrement only before commiting a transaction.
-# I discovered timedelta after having already written it... refactor on to-do list.  
-
 def fetch12mXAxis():
     prev_12_months = []
     target_month = int(current_month)
