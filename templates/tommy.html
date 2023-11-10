@@ -45,6 +45,8 @@
 
 </script>
 
+<!-- All data served from backend is kept as python data structures -- thus they are served by escaping chars with tojson first,-->
+<!-- As well as being json.parse() into a JSON object to be used in the scripts-->
 <script>
     //Button Functionality for 3-month chart. 
     let Button3m = document.getElementById("3m-button"); 
@@ -106,7 +108,7 @@
 <div id="training-table-highestW"> </div>
 
 <script>
-    var highestW_PRs = {{ highest_W_table | tojson }}
+    var highestW_PRs = JSON.parse('{{ highest_W_table | tojson }}')
 
     //custom max min filter function
     function minMaxFilterFunction(headerValue, rowValue, rowData, filterParams){

@@ -113,7 +113,7 @@ def fetch_training_table_data(username):
     
     with open(highest_W_path, 'r') as file:
         highest_W_data = json.load(file)   
-        return json.dumps(highest_W_data)
+        return highest_W_data
 
 
 
