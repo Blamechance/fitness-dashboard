@@ -111,7 +111,7 @@
 <div id="training-table-highestW"></div>
 
 <script>
-    var highestW_PRs = JSON.parse('{{ highest_W_table | tojson }}')
+    var highestW_PRs = JSON.parse('{{ all_training_table | tojson }}')
 
     //custom max min filter function
     function minMaxFilterFunction(headerValue, rowValue, rowData, filterParams){

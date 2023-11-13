@@ -83,7 +83,7 @@ def tommy():
         weight_graph_12m_points = json_string_to_weight_plots(x_axis_12, target_json_weight_file)
         weight_graph_6m_points = json_string_to_weight_plots(x_axis_6, target_json_weight_file)
         weight_graph_3m_points = json_string_to_weight_plots(x_axis_3, target_json_weight_file)
-        highest_W_table  = fetch_training_table_data("Tommy")
+        highest_W_table, all_training_table, SI_PR_table  = fetch_training_table_data("Tommy")
         
         
         # Fetch table data to serve to user page: 
@@ -93,7 +93,9 @@ def tommy():
                                 weight_graph_12m_points = weight_graph_12m_points,
                                 weight_graph_6m_points = weight_graph_6m_points,
                                 weight_graph_3m_points = weight_graph_3m_points,
-                                highest_W_table = highest_W_table) 
+                                highest_W_table = highest_W_table,
+                                all_training_table = all_training_table,
+                                SI_PR_table = SI_PR_table) 
             
 @app.route('/nathan', methods=["GET", "POST"])
 def nathan():
@@ -108,12 +110,19 @@ def fetch_training_table_data(username):
     """
         Fetchs the training table data and returns it as a JSON object. 
     """
-    highest_W_file = select_latest_JSON("HeaviestPRs", "Tommy")
-    highest_W_path = os.path.join(app.config['PROCESSED_TRAINING_DATA'], highest_W_file)
+    heaviest_PR_file = select_latest_JSON("HeaviestPRs", username)
+    all_training_file = select_latest_JSON("All_Training_Data", username)
+    SI_PR_file = select_latest_JSON("SI_PRs", username)
+
+    file_list = [heaviest_PR_file, all_training_file, SI_PR_file]
+    output_lists = []
+
+    for file in file_list:
+        filepath = os.path.join(app.config['PROCESSED_TRAINING_DATA'], file)
     
-    with open(highest_W_path, 'r') as file:
-        highest_W_data = json.load(file)   
-        return highest_W_data
+        with open(filepath, 'r') as open_file:
+            output_lists.append(json.load(open_file))
+    return output_lists
 
 
 
@@ -472,6 +481,14 @@ def select_latest_JSON(data_type, username):
     elif data_type == "HeaviestPRs":
         log_dir = os.listdir(app.config['PROCESSED_TRAINING_DATA'])
         file_prefix = "HeaviestPRs_" 
+
+    elif data_type == "All_Training_Data":
+        log_dir = os.listdir(app.config['PROCESSED_TRAINING_DATA'])
+        file_prefix = "All_Training_Data_" 
+
+    elif data_type == "SI_PRs":
+        log_dir = os.listdir(app.config['PROCESSED_TRAINING_DATA'])
+        file_prefix = "SI_PRs_" 
 
     for item in log_dir: 
         sliced_filename = item[item.index("202"):] #index between year and csv (inclusive of year but not csv)
