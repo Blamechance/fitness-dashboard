@@ -17,6 +17,11 @@
 <button id="6m-button" type="button">6 Months</button>
 <button id="12m-button" type="button">12 Months</button>
 
+<h3> Athlete Last Recorded Average Weight : </h3>
+<h6> (7 Day average) </h6>
+<h5> {{ current_weight | safe }} kgs </h5>
+
+
 <!-- Weight Graph -->
 <script>
     //Configure default chart to be loaded on page render:
@@ -32,7 +37,7 @@
     }; 
 
     const weightChartOptions = {
-        //for future use: 
+        //Add further options in future: 
     };
 
     //Setting default render of weight graph to 12 months
@@ -104,18 +109,65 @@
 </script>
 
 
-<h3> Training Data PR Analysis:</h3>
-<button id="allTrainingData" type="button">All Training Data</button>
-<button id="sIndexPRData" type="button">Highest Strength Index Sets</button>
+<h3> Analysing Training Data:</h3>
+<p> 
+    The Strength Index (SI) is a custom formula designed to measure the strength feat of an exercise set. </p>
+<p>
+    It takes into account context of athlete bodyweight, as well as reps carried out. This allows athletes to tangibly measure progress in strength, if the user achieves the same lift at a lower body weight. 
+    For recorded sets where the user also logged their body weight ( +/-3 days for a 7 day window of relevance), a strength index is calculated.
+
+<p>The formula is as follows: </p>
+<p> 
+    <i> [ Reps x weight ] / [ bodyweight(kg) x <span style="color: red;">Rep Range Factor*</span> ] </i>
+</p>
+<p>
+    <span style="color: red;"> *Rep Range factors will be utilised based on the following scaling model: </span>
+    <ul>
+        <li>1-2 reps = 3.3</li>
+        <li>3-6 reps = 1.4</li>
+        <li>7-10 reps = 1 (normal)</li>
+        <li>11-15 reps = 0.8</li>
+        <li>16-30 reps = None (don't calculate due to obvious skewing)</li>
+    </ul> 
+</p>
+
+<h3> Custom Training Data Analysis:</h3>
+<p>
+    This table shows two different types of PR's: 
+    <ul>
+        <li> "Heaviest Weight Sets": </li>
+        <ul>
+            <li>This contains the heaviest weight lifted within a single set, for each recorded exercise type. </li>
+        </ul>
+    </ul>
+    <ul>
+        <li> "Highest Strength Index Sets": </li>
+        <ul>
+            <li>  For sets where a Strength Index could be calculated, this table shows the top scoring lift.</li>
+        </ul>
+    </ul>
+</p>
+
+<!-- <button id="allTrainingData" type="button">All Training Data</button> -->
 <button id="topWeightPRs" type="button">Heaviest Weight Sets</button>
-<div id="training-table-highestW"></div>
+<button id="sIndexPRData" type="button">Highest Strength Index Sets</button>
+<div id="customTrainingTable"></div>
+
+<h3> All Training Data:</h3>
+<p>
+    This table shows all non-duplicate, recorded sets. 
+    <ul>
+        <li> Use this to compare historical data against the lifts above. </li>
+        <li> The text boxes are filters, and your best friend to sort through the data!</li>
+    </ul>
+</p>
+<div id="allTrainingTable"></div>
+
 
 <script>
     var topWTableData = JSON.parse('{{ highest_W_table | tojson }}')
     var allTrainingTableData = JSON.parse('{{ all_training_table | tojson }}')
     var strengthTableData = JSON.parse('{{ SI_PR_table | tojson }}')
-
-
 
     //custom max min filter function
     function minMaxFilterFunction(headerValue, rowValue, rowData, filterParams){
@@ -143,24 +195,36 @@
  
     //Buttons to change the data being rendered between all data, SI PR data or top weight sets data. 
 
-    allTrainingData.addEventListener("click", function() {
-        trainingDataTable.clearData()
-        trainingDataTable.replaceData(allTrainingTableData)
-    })
-
     sIndexPRData.addEventListener("click", function() {
-        trainingDataTable.clearData()
-        trainingDataTable.replaceData(strengthTableData)
+        customTrainingTable.clearData()
+        customTrainingTable.replaceData(strengthTableData)
     })
 
     topWeightPRs.addEventListener("click", function() {
-        trainingDataTable.clearData()
-        trainingDataTable.replaceData(topWTableData)
+        customTrainingTable.clearData()
+        customTrainingTable.replaceData(topWTableData)
 
     })
 
        
-    var trainingDataTable = new Tabulator("#training-table-highestW", {
+    var customTrainingTable = new Tabulator("#customTrainingTable", {
+        height:400, // set height of table (in CSS or here), this enables the Virtual DOM and improves render speed dramatically (can be any valid css height value)
+        data: topWTableData, //assign data to table
+        groupBy:"Category",
+        layout:"fitColumns", //fit columns to width of table (optional)
+        columns:[ //Define Table Columns
+            {title:"Exercise", field:"Exercise", minWidth:180, frozen:true, headerFilter: "input"},
+            {title:"Weight (kgs)", field:"Weight", hozAlign:"center", maxWidth:120, headerFilter: "input"},
+            {title:"Reps", field:"Reps", hozAlign:"center", width:75, headerFilter: "number"},
+            {title:"Date Achieved", field:"Date", sorter:"date", hozAlign:"center", maxWidth:150, headerFilter: "input"},
+            {title:"Strength Index", field: "Strength Index", hozAlign:"center"},
+            {title:"Bodyweight (kgs)", field:"Bodyweight", hozAlign:"center"},
+            {title:"Comment", field:"Comment", minWidth:300, headerFilter: "input"},
+
+        ],
+    });
+
+    var allTrainingTable = new Tabulator("#allTrainingTable", {
         height:400, // set height of table (in CSS or here), this enables the Virtual DOM and improves render speed dramatically (can be any valid css height value)
         data: allTrainingTableData, //assign data to table
         groupBy:"Category",
@@ -176,38 +240,12 @@
 
         ],
     });
+
+    customTrainingTable.setGroupStartOpen(false); // collapse groups for allTrainingTable. 
+    allTrainingTable.setGroupStartOpen(false); // collapse groups for allTrainingTable. 
+
 </script>
 
-<script>
-    //Functionality to update Muscle Group Analysis graph: 
-
-    //On selecting a period, pass the dates back to app.py for processing. Use the returned values to update graph. 
-    function fetchVolumeAnalysis() {
-        let volForm = document.getElementById("volume-submit-btn"); 
-        let userPeriod = document.getElementById("vol-period-selection").value;
-
-        event.preventDefault(); // Prevents form from submitting and reloading the page
-        console.log("Client side userPeriod = " + userPeriod); 
-
-        //Send the selected period to the server. Use data returned to update graph.
-        $.ajax({
-            type: "POST", 
-            url: "/volume_analysis",
-            data: JSON.stringify(userPeriod),
-            success: function(data) {
-                var volResult = data;
-                console.log("Data received : " + data)
-
-                //Code to update graph with new values: 
-                tommyVolGraph.data.datasets[0].data = volResult.split(",");
-                tommyVolGraph.update();
-            },
-            error: function() {
-                alert("Volume Analysis Error: Failed to receive target period's data from server. ")
-            }
-        })
-    };
-</script>
 
 
 {% endblock %}

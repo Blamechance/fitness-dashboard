@@ -83,6 +83,7 @@ def tommy():
         weight_graph_12m_points = json_string_to_weight_plots(x_axis_12, target_json_weight_file)
         weight_graph_6m_points = json_string_to_weight_plots(x_axis_6, target_json_weight_file)
         weight_graph_3m_points = json_string_to_weight_plots(x_axis_3, target_json_weight_file)
+        current_weight = weight_graph_3m_points[-1]
         highest_W_table, all_training_table, SI_PR_table  = fetch_training_table_data("Tommy")
         
         
@@ -93,6 +94,7 @@ def tommy():
                                 weight_graph_12m_points = weight_graph_12m_points,
                                 weight_graph_6m_points = weight_graph_6m_points,
                                 weight_graph_3m_points = weight_graph_3m_points,
+                                current_weight = current_weight,
                                 highest_W_table = highest_W_table,
                                 all_training_table = all_training_table,
                                 SI_PR_table = SI_PR_table) 
