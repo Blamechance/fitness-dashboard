@@ -522,13 +522,12 @@ def process_weight_log():
 
     # load that data into a string of dates. 
     loaded_entries = json.loads(parsed_entries_string)
-    print(f"loaded_entries type: {type(loaded_entries)}")
     log_entry_data = loaded_entries["data"]
     log_entry_dates = []
 
     for item in log_entry_data:
         log_entry_dates.append(item[0])
-    print(f"{log_entry_dates}")
+
 
     # take the last date entry as the most recent one -- create final output file name:
     latest_entry_date = log_entry_dates[len(log_entry_dates)-1]
@@ -566,7 +565,6 @@ def process_training_log():
                     factor = value
                     break
             rep_count = df.loc[index]
-            print(f"repcount: {rep_count}")
             SI_output = (df.at[index, "Reps"] * df.at[index, "Weight"] * 10) / (df.at[index, "Bodyweight"] * factor)
             return round(SI_output,2)
         return 0
@@ -660,7 +658,7 @@ def process_training_log():
                 heaviest_weight_helper_dict[exercise] = row.to_dict()   
 
     ### 2. Iterate over df, searching for Highest Strength Index Lifts to append:
-        if df.at[index, 'Exercise'] not in SI_PR_helper_dict: 
+        if df.at[index, 'Exercise'] not in SI_PR_helper_dict and df.at[index, 'Strength Index'] > 0 : 
             SI_PR_helper_dict[df.at[index, 'Exercise']] = row.to_dict()
         
         # if exists and current row is better than one in PR, replace it. Table data will hold date lift was first hit:         
@@ -683,7 +681,7 @@ def process_training_log():
     [strength_index_prs.append(value) for value in SI_PR_helper_dict.values()]
     all_training_data = df.to_dict('records') # 3. All lifts, unsorted.  
     
-    return heaviest_weight_prs, SI_PR_helper_dict, all_training_data
+    return heaviest_weight_prs, strength_index_prs, all_training_data
         
     
 
