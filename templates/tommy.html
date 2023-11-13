@@ -105,7 +105,10 @@
 
 
 <h3> Heaviest Weight for Reps PR's:</h3>
-<div id="training-table-highestW"> </div>
+<button id="all-training-data" type="button">All Training Data</button>
+<button id="SI-PR-data" type="button">Highest Strength Index Sets</button>
+<button id="top-weight-PR" type="button">Heaviest Weight Sets</button>
+<div id="training-table-highestW"></div>
 
 <script>
     var highestW_PRs = JSON.parse('{{ highest_W_table | tojson }}')

@@ -22,7 +22,7 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.config['WEIGHT_LOG_FOLDER'] = 'files/weight_logs'
 app.config['TRAINING_LOG_FOLDER'] = 'files/training_logs'
 app.config['LOG_ARCHIVE'] = 'files/log_archive'
-app.config['HEAVIEST_PRS'] = 'files/training_tabulator_data' # tabulator table data for heaviest PRs
+app.config['PROCESSED_TRAINING_DATA'] = 'files/training_tabulator_data' # tabulator table data for heaviest PRs
 app.config['MAX_CONTENT_PATH'] = 50000 # sample files average 20KB. 
 
 #Define appropriate CSV headers + byte length for validate function: 
@@ -109,7 +109,7 @@ def fetch_training_table_data(username):
         Fetchs the training table data and returns it as a JSON object. 
     """
     highest_W_file = select_latest_JSON("HeaviestPRs", "Tommy")
-    highest_W_path = os.path.join(app.config['HEAVIEST_PRS'], highest_W_file)
+    highest_W_path = os.path.join(app.config['PROCESSED_TRAINING_DATA'], highest_W_file)
     
     with open(highest_W_path, 'r') as file:
         highest_W_data = json.load(file)   
@@ -331,15 +331,21 @@ def upload_file():
             os.remove((os.path.join(app.config['TRAINING_LOG_FOLDER'], file_name)))
             return "File format error. Please export your file and try again. ", 400
         
-        heaviest_prs_data = process_training_log()
+        # Process the submitted training CSV to receive 3 lists of data: 
+        heaviest_prs_data, SI_PR_data, all_training_data = process_training_log()
         
-        # Save the processed training data on upload as JSON, in training_tables folder: 
+        # Save the data as JSON, in training_tables folder: 
+        heaviest_pr_filename = f"HeaviestPRs_username_{DATETIME_NOW}"
+        SI_PR_filename = f"SI_PRs_username_{DATETIME_NOW}"
+        all_training_data_filename = f"All_Training_Data_username_{DATETIME_NOW}"
 
-        output_filename = f"HeaviestPRs_username_{DATETIME_NOW}"
-        output_filepath = os.path.join(app.config['HEAVIEST_PRS'], output_filename)
+        filename_list = {heaviest_pr_filename:heaviest_prs_data, SI_PR_filename : SI_PR_data, all_training_data_filename: all_training_data}
 
-        with open(output_filepath, 'w', encoding="utf-8") as output:
-            output.write(json.dumps(heaviest_prs_data))
+        for filename, data_list in filename_list.items(): 
+            output_filepath = os.path.join(app.config['PROCESSED_TRAINING_DATA'], filename)
+
+            with open(output_filepath, 'w', encoding="utf-8") as output:
+                output.write(json.dumps(data_list))
 
         return "Server file upload Success."        
     
@@ -464,7 +470,7 @@ def select_latest_JSON(data_type, username):
         file_prefix = "WeightLog_" 
 
     elif data_type == "HeaviestPRs":
-        log_dir = os.listdir(app.config['HEAVIEST_PRS'])
+        log_dir = os.listdir(app.config['PROCESSED_TRAINING_DATA'])
         file_prefix = "HeaviestPRs_" 
 
     for item in log_dir: 
@@ -553,8 +559,6 @@ def process_training_log():
     latest_weight_json = select_latest_JSON("weight", username) 
     latest_weight_archive_location = os.path.join(app.config['LOG_ARCHIVE'] , latest_weight_json)
     df_format_archive = "%Y-%m-%d"
-
-    true_weight_PRs = {} # list containing dicts of exercises that are the top PR's 
     drop_columns = ["Distance", "Distance Unit", "Time"]
     
     # Drop all unrelated columns in dataframe + drop any sets of same details within same day + add columns for BW/SI
@@ -567,9 +571,6 @@ def process_training_log():
     df['Weight'] = df['Weight'].fillna(0) 
     df['Weight Unit'] = df['Weight Unit'].fillna("kgs") 
     df['Reps'] = df['Reps'].fillna(0) 
-
-
-        
 
     # This loop iterates through each of the training log data rows to do the following: 
     # 1. Takes the date the lift was executed to seach through the most recent weight log archive file. 
@@ -584,7 +585,16 @@ def process_training_log():
         lower_date = datetime.strptime(lift_date, df_format_archive) - timedelta(days=3)
         search_dates = []
         matching_weight = [] 
+
+        # helper dicts to store df rows, of {exercise_name:{dicts of lift details}}
+        heaviest_weight_helper_dict = {} # list containing dicts of exercises that are the top PR's 
+        SI_PR_helper_dict = {}
+    
+
+        # Following are the output lists to return: 
         heaviest_weight_prs = []
+        strength_index_prs = []
+        all_training_data = []
 
         for i in range(7):
             search_dates.append((lower_date + timedelta(days=i)).strftime(df_format_archive))
@@ -618,27 +628,45 @@ def process_training_log():
         df.at[index, 'Strength Index'] = s_index     
 
     for index, row in df.iterrows():
-       ### 1. Process for heaviest weight PRs: 
+       ### 1. Iterate over df, searching for heaviest weight PRs to append: 
         # Check if the PR list contains a dict entry with the same key as this exerise - if not, append this one as {ex_name: entire_row}
-        if df.at[index, 'Exercise'] not in true_weight_PRs: 
-            true_weight_PRs[df.at[index, 'Exercise']] = row.to_dict()
+        if df.at[index, 'Exercise'] not in heaviest_weight_helper_dict: 
+            heaviest_weight_helper_dict[df.at[index, 'Exercise']] = row.to_dict()
         
         # if exists and current row is better than one in PR, replace it. Table data will hold date lift was first hit:         
-        for exercise, lift_data in true_weight_PRs.items():    
+        for exercise, lift_data in heaviest_weight_helper_dict.items():    
             #only replace row if more reps and more weight, or same weight and higher reps        
             if df.at[index, 'Weight'] > lift_data["Weight"] and df.at[index, 'Exercise'] == exercise:
-                true_weight_PRs[exercise] = row.to_dict()
+                heaviest_weight_helper_dict[exercise] = row.to_dict()
                       
             elif df.at[index, 'Weight'] == lift_data["Weight"] and df.at[index, 'Exercise'] == exercise and df.at[index, "Reps"] > lift_data["Reps"]: 
-                true_weight_PRs[exercise] = row.to_dict()   
+                heaviest_weight_helper_dict[exercise] = row.to_dict()   
 
-    [heaviest_weight_prs.append(value) for value in true_weight_PRs.values()]
+    ### 2. Iterate over df, searching for Highest Strength Index Lifts to append:
+        if df.at[index, 'Exercise'] not in SI_PR_helper_dict: 
+            SI_PR_helper_dict[df.at[index, 'Exercise']] = row.to_dict()
+        
+        # if exists and current row is better than one in PR, replace it. Table data will hold date lift was first hit:         
+        for exercise, lift_data in SI_PR_helper_dict.items():
+            # if no strength index data, skip row: 
+            if df.at[index, 'Strength Index'] == 0:
+                continue    
 
-    ### 2. Process for Highest Strength Index Lifts:
+            # if new row has better strength index for the exercise, update it:         
+            if df.at[index, 'Strength Index'] > lift_data["Strength Index"] and df.at[index, 'Exercise'] == exercise:
+                SI_PR_helper_dict[exercise] = row.to_dict()
 
-    ### 3. All lifts, unsorted.  
+            # if matched in strength index, update anyway for more current data:           
+            elif df.at[index, 'Strength Index'] == lift_data["Strength Index"] and df.at[index, 'Exercise'] == exercise: 
+                SI_PR_helper_dict[exercise] = row.to_dict()   
+
+
+    # output aggregated data as list of dicts, to be parsed into JSON later: 
+    [heaviest_weight_prs.append(value) for value in heaviest_weight_helper_dict.values()]
+    [strength_index_prs.append(value) for value in SI_PR_helper_dict.values()]
+    all_training_data = df.to_dict('records') # 3. All lifts, unsorted.  
     
-    return heaviest_weight_prs 
+    return heaviest_weight_prs, SI_PR_helper_dict, all_training_data
         
     
 
