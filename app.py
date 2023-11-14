@@ -25,7 +25,6 @@ Session(app)
 
 # TODO: Check if db file exists, if not, create it. 
 
-
 # Configure the user DB:
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 db = SQLAlchemy(app)
