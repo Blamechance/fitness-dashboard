@@ -2,17 +2,34 @@ import os
 import datetime
 import json
 import pandas as pd
+import sqlite3
 
 
 from datetime import date, datetime, timedelta
-
 from flask import Flask, flash, redirect, render_template, request, session, jsonify
 from flask_session import Session
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+
 from json import loads, dumps
 
 
 # Configure application - this lets flask know to use the "app.py" file
 app = Flask(__name__)
+
+# Configure session to use filesystem (instead of signed cookies)
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem"
+Session(app)
+
+
+# TODO: Check if db file exists, if not, create it. 
+
+
+# Configure the user DB:
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+db = SQLAlchemy(app)
+
 
 # Disable caching + enable debug/auto reload of page:
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
@@ -23,7 +40,6 @@ app.config['WEIGHT_LOG_FOLDER'] = 'files/weight_logs'
 app.config['TRAINING_LOG_FOLDER'] = 'files/training_logs'
 app.config['LOG_ARCHIVE'] = 'files/log_archive'
 app.config['PROCESSED_TRAINING_DATA'] = 'files/training_tabulator_data' # tabulator table data for heaviest PRs
-app.config['MAX_CONTENT_PATH'] = 50000 # sample files average 20KB. 
 
 #Define appropriate CSV headers + byte length for validate function: 
 TRAINING_HEADERS = "Date,Exercise,Category,Weight,Weight Unit,Reps,Distance,Distance Unit,Time,Comment"
@@ -46,6 +62,86 @@ last_year = int(current_year) - 1
 DATETIME_NOW = date(current_year, current_month, current_day) 
 
 print(f"DATETIME_NOW = {DATETIME_NOW}")
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    """Log user in"""
+
+    # Clear any current user_id -- this page shouldn't render if user logged in anyway. 
+    session.clear()
+    error = None
+
+    # User reached route via POST (as by submitting a form via POST)
+    if request.method == "POST":
+
+        # Ensure username was submitted
+        if not request.form.get("username"):
+            error = "Please provide a username!"
+
+        # Ensure password was submitted
+        elif not request.form.get("password"):
+            error = "Please provide a password!"
+
+        else:
+            # Query database for username
+            conn = sqlite3.connect('users.db')
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM users WHERE username = ?", [request.form.get("username")])
+            rows = cur.fetchall()
+            conn.close()
+
+            # Ensure username exists and password is correct
+            if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
+                error = "Invalid username and/or password."
+
+        if error is None:
+            # Remember which user has logged in
+            session["user_id"] = rows[0]["id"]
+
+            # Redirect user to home page
+            return redirect("/")
+
+    # User reached route via GET (as by clicking a link or via redirect)
+    return render_template("login.html", error=error)
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    """Register user"""
+    if request.method == "POST":
+
+        if not request.form.get("username"): #this will only execute if username is empty
+            error = "Username cannot be empty."
+
+        if not request.form.get("password"):
+            error = "Please enter a password."
+
+        elif not request.form.get("confirmation"):
+            error = "Please confirm your password."
+
+
+        elif not request.form.get("password") == request.form.get("confirmation"):
+            error = "Passwords do not match! Please try again."
+
+        new_username = request.form.get("username")
+        #check DB for if username exists, if so, return apology.
+        name_check = db.execute("SELECT username FROM users WHERE username = ?;", new_username)
+        print(f"Checking if name exists ... {name_check}")
+
+        if name_check:
+            error = "Sorry, Username already exists - please try another one!"
+
+        new_password = request.form.get("password")
+
+        #hash the user's password
+        hashed_password = generate_password_hash(new_password)
+
+
+        db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", new_username, hashed_password)
+        return redirect("/", 200)
+
+    else:
+        #this ensures that if the page was not reached by redirection (thus GET), it will show the new fields for new entry.
+        return render_template("register.html")
 
 @app.route('/', methods=["GET", "POST"])
 def index():
