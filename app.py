@@ -14,6 +14,7 @@ from sqlalchemy.orm import sessionmaker
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from json import loads, dumps
+from login_helpers import login_required
 
 
 # Configure application - this lets flask know to use the "app.py" file
@@ -43,9 +44,6 @@ users_table = Table(
     Column('username', String(64), unique=True, nullable=False),
     Column('password_hash', String(128), nullable=False),
 )
-
-
-
 
 # Disable caching + enable debug/auto reload of page:
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
@@ -91,7 +89,7 @@ def login():
     if request.method == "POST":
 
         # Ensure username was submitted
-        if not request.form.get("username"):
+        if not request.form.get("username").lower():
             error = "Please provide a username!"
             
 
@@ -111,7 +109,7 @@ def login():
             if error is None:
                 # Remember which user has logged in
                 session["user_id"] = user[1]
-                print(f"Session saved for {user[1]}")
+                print(f"Session saved for {(user[1]).capitalize()}")
 
             # Redirect user to home page
             return redirect("/")
@@ -141,7 +139,7 @@ def register():
             error = "Passwords do not match! Please try again."
             return render_template("register.html", error=error)
 
-        #check DB for if username exists, if so, return apology.
+        # QueryDB to see if username exists, if so, return error. 
         db_session = DB_session_creator()
         name_check = db_session.query(users_table).filter_by(username=request.form.get("username")).first()
 
@@ -160,7 +158,7 @@ def register():
         db_session.commit()
         success = "Account Created! Please Sign in."
 
-        return redirect("login.html", success=success)
+        return render_template("login.html", success=success)
 
     else:
         #this ensures that if the page was not reached by redirection (thus GET), it will show the new fields for new entry.
@@ -175,10 +173,12 @@ def logout():
     return redirect("/")
 
 @app.route('/', methods=["GET", "POST"])
+@login_required
 def index():
     return render_template("index.html") 
 
 @app.route('/team-dashboard', methods=["GET", "POST"])
+@login_required
 def teamDashboard():
     return render_template("team-dashboard.html") 
 
@@ -187,10 +187,12 @@ def athletes():
     return render_template("athletes.html") 
 
 @app.route('/checkin', methods=["GET", "POST"])
+@login_required
 def checkin():
     return render_template("checkin.html") 
 
 @app.route('/tommy', methods=["GET", "POST"])
+@login_required
 def tommy():
     #Prepare items to pass to Weight Line Graph -- dates on axis + points to plot:   
     x_axis_12 = fetch12mXAxis()
