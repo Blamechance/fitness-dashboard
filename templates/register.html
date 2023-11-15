@@ -16,5 +16,8 @@
             <input class="form-control mx-auto w-auto" id="confirmation" name="confirmation" placeholder="Type Password Again" type="password">
         </div>
         <button class="btn btn-primary" type="submit">Register</button>
+        {% if error %}
+        <p class="error-message">{{ error }}</p>
+        {% endif %}
     </form>
 {% endblock %}

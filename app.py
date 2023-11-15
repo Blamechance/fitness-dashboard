@@ -9,6 +9,8 @@ from datetime import date, datetime, timedelta
 from flask import Flask, flash, redirect, render_template, request, session, jsonify
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import create_engine, Table, MetaData, Column, Integer, String, DateTime
+from sqlalchemy.orm import sessionmaker
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from json import loads, dumps
@@ -25,9 +27,24 @@ Session(app)
 
 # TODO: Check if db file exists, if not, create it. 
 
-# Configure the user DB:
+# Configure the user DB and engine for DB operations:
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 db = SQLAlchemy(app)
+
+# DB session factory/manager:
+engine = create_engine('sqlite:///users.db') # simplifies DB interactions w/o manual creation of connections
+DB_session_creator = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+metadata = MetaData()
+
+users_table = Table(
+    'users',
+    metadata,
+    Column('id', Integer, primary_key=True),
+    Column('username', String(64), unique=True, nullable=False),
+    Column('password_hash', String(128), nullable=False),
+)
+
+
 
 
 # Disable caching + enable debug/auto reload of page:
@@ -76,26 +93,25 @@ def login():
         # Ensure username was submitted
         if not request.form.get("username"):
             error = "Please provide a username!"
+            
 
         # Ensure password was submitted
         elif not request.form.get("password"):
             error = "Please provide a password!"
 
         else:
-            # Query database for username
-            conn = sqlite3.connect('users.db')
-            cur = conn.cursor()
-            cur.execute("SELECT * FROM users WHERE username = ?", [request.form.get("username")])
-            rows = cur.fetchall()
-            conn.close()
+            db_session = DB_session_creator()
+            user = db_session.query(users_table).filter_by(username=request.form.get("username")).first() # return the first result using passed username as filter
 
-            # Ensure username exists and password is correct
-            if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
+            if user is None or not check_password_hash(user.password_hash, request.form.get("password")): 
                 error = "Invalid username and/or password."
+                return render_template("login.html", error=error)
 
-        if error is None:
-            # Remember which user has logged in
-            session["user_id"] = rows[0]["id"]
+
+            if error is None:
+                # Remember which user has logged in
+                session["user_id"] = user[1]
+                print(f"Session saved for {user[1]}")
 
             # Redirect user to home page
             return redirect("/")
@@ -110,37 +126,53 @@ def register():
 
         if not request.form.get("username"): #this will only execute if username is empty
             error = "Username cannot be empty."
+            return render_template("register.html", error=error)
 
         if not request.form.get("password"):
             error = "Please enter a password."
+            return render_template("register.html", error=error)
 
         elif not request.form.get("confirmation"):
             error = "Please confirm your password."
+            return render_template("register.html", error=error)
 
 
         elif not request.form.get("password") == request.form.get("confirmation"):
             error = "Passwords do not match! Please try again."
+            return render_template("register.html", error=error)
 
-        new_username = request.form.get("username")
         #check DB for if username exists, if so, return apology.
-        name_check = db.execute("SELECT username FROM users WHERE username = ?;", new_username)
-        print(f"Checking if name exists ... {name_check}")
+        db_session = DB_session_creator()
+        name_check = db_session.query(users_table).filter_by(username=request.form.get("username")).first()
 
         if name_check:
             error = "Sorry, Username already exists - please try another one!"
+            print(f"user exists - returning error.")
+            return render_template("register.html", error=error)
 
         new_password = request.form.get("password")
+        new_username = request.form.get("username")
 
-        #hash the user's password
+
+        # New register valid -- hash the user's password and add them to DB
         hashed_password = generate_password_hash(new_password)
+        db_session.execute(users_table.insert(), {'username': new_username, 'password_hash': hashed_password})
+        db_session.commit()
+        success = "Account Created! Please Sign in."
 
-
-        db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", new_username, hashed_password)
-        return redirect("/", 200)
+        return redirect("login.html", success=success)
 
     else:
         #this ensures that if the page was not reached by redirection (thus GET), it will show the new fields for new entry.
         return render_template("register.html")
+
+@app.route("/logout")
+def logout():
+    # Forget any user_id
+    session.clear()
+
+    # Redirect user to login form
+    return redirect("/")
 
 @app.route('/', methods=["GET", "POST"])
 def index():
