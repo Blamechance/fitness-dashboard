@@ -1,17 +1,13 @@
 {% extends "layout.html" %}
 
-{% block title %}
-    Tommy
-{% endblock %}
-
 {% block main %}
 
-<h1> Tommy's statistics </h1>
-<p>Hello, World - this is Tommy.</p>
+<h1> {{ current_username }}'s statistics </h1>
+<p>Hello, World - this is {{ current_username }}.</p>
 
 <h3> Bodyweight Tracking:</h3>
 
-<canvas id="tommyWeightGraph" style="max-width: 60%;"></canvas>
+<canvas id="weightGraph" style="max-width: 60%;"></canvas>
 
 <button id="3m-button" type="button">3 Months</button>
 <button id="6m-button" type="button">6 Months</button>
@@ -42,7 +38,7 @@
 
     //Setting default render of weight graph to 12 months
     //TODO: Add dynamic 12 month dataset. 
-    tommyWeightGraph = new Chart("tommyWeightGraph", {
+    weightGraph = new Chart("weightGraph", {
         type: "line",
         data: weightChartData,
         options: weightChartOptions
@@ -58,7 +54,7 @@
 
     //Initialise new chart axis and update on buttom prompt:
     Button3m.addEventListener("click", function() {
-        tommyWeightGraph.data = {
+        weightGraph.data = {
             labels: JSON.parse('{{ x_axis_3 | tojson }}'),
             datasets: [{
                 label: "Weight (kg)", 
@@ -68,7 +64,7 @@
                 fill: false
             }]  
         }
-        tommyWeightGraph.update();
+        weightGraph.update();
     });
 
     //Button Functionality for 12-month chart. 
@@ -76,7 +72,7 @@
 
     //Initialise new chart axis and update on buttom prompt:
     Button12m.addEventListener("click", function() {
-        tommyWeightGraph.data = {
+        weightGraph.data = {
             labels: JSON.parse('{{ x_axis_12 | tojson }}'),
             datasets: [{
                 label: "Weight (kg)", 
@@ -86,7 +82,7 @@
                 fill: false
             }]
         }
-        tommyWeightGraph.update();
+        weightGraph.update();
     });
 
     //Button Functionality for 6-month chart. 
@@ -94,7 +90,7 @@
 
     //Initialise new chart axis and update on buttom prompt:
     Button6m.addEventListener("click", function() {
-        tommyWeightGraph.data = {
+        weightGraph.data = {
             labels: JSON.parse('{{ x_axis_6 | tojson }}'),
             datasets: [{
                 label: "Weight (kg)", 
@@ -104,7 +100,7 @@
                 fill: false
             }]
         }
-        tommyWeightGraph.update();
+        weightGraph.update();
     });
 </script>
 

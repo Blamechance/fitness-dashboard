@@ -182,43 +182,44 @@ def index():
 def teamDashboard():
     return render_template("team-dashboard.html") 
 
-@app.route('/athletes', methods=["GET", "POST"])
-def athletes():
-    return render_template("athletes.html") 
 
 @app.route('/checkin', methods=["GET", "POST"])
 @login_required
 def checkin():
     return render_template("checkin.html") 
 
-@app.route('/tommy', methods=["GET", "POST"])
+@app.route('/athlete_dashboard', methods=["GET", "POST"])
 @login_required
-def tommy():
+def athlete():
+    highest_W_table = []
+    all_training_table = []
+    SI_PR_table = []
+    
+    current_username = str(session["user_id"]).capitalize()
+
     #Prepare items to pass to Weight Line Graph -- dates on axis + points to plot:   
     x_axis_12 = fetch12mXAxis()
     x_axis_3 = fetch3mXAxis()
     x_axis_6 = fetch6mXAxis()    
      
     if request.method == "POST": # POST method indicates user was redirected to function by another. 
-        # Muscle Group Pie Graph:
-        # call volume analysis function -- currently just prints the option:
-        print("Entering POST method for tommy(): ")
-        return render_template("tommy.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
+        return render_template("athlete.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
 
     else: # GET method indicates user put address to route to the function.  
-        target_json_weight_file = select_latest_JSON("weight", "Tommy") # find the weight archive to load 
+        target_json_weight_file = select_latest_JSON("weight") # find the weight archive to load, for this user 
         
         # process most current JSON archive file with axis list to find average points to graph. 
         weight_graph_12m_points = json_string_to_weight_plots(x_axis_12, target_json_weight_file)
         weight_graph_6m_points = json_string_to_weight_plots(x_axis_6, target_json_weight_file)
         weight_graph_3m_points = json_string_to_weight_plots(x_axis_3, target_json_weight_file)
         current_weight = weight_graph_3m_points[-1]
-        highest_W_table, all_training_table, SI_PR_table  = fetch_training_table_data("Tommy")
+        highest_W_table, all_training_table, SI_PR_table  = fetch_training_table_data()
         
         
         # Fetch table data to serve to user page: 
         
-        return render_template("tommy.html",
+        return render_template("athlete_dashboard.html",
+                               current_username = current_username,
                                x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6,
                                 weight_graph_12m_points = weight_graph_12m_points,
                                 weight_graph_6m_points = weight_graph_6m_points,
@@ -237,22 +238,35 @@ def raymond():
     return render_template("raymond.html") 
 
 
-def fetch_training_table_data(username): 
+def fetch_training_table_data(): 
     """
         Fetchs the training table data and returns it as a JSON object. 
     """
-    heaviest_PR_file = select_latest_JSON("HeaviestPRs", username)
-    all_training_file = select_latest_JSON("All_Training_Data", username)
-    SI_PR_file = select_latest_JSON("SI_PRs", username)
+    # empty initialisation in case no data: 
+    heaviest_PR_file = []
+    all_training_file = []
+    SI_PR_file = []
+
+    if not select_latest_JSON("HeaviestPRs") == "Folder Empty":
+        heaviest_PR_file = select_latest_JSON("HeaviestPRs") 
+    
+    if not select_latest_JSON("All_Training_Data") == "Folder Empty":
+        all_training_file = select_latest_JSON("All_Training_Data") 
+
+    if not select_latest_JSON("SI_PRs") == "Folder Empty":
+        SI_PR_file = select_latest_JSON("SI_PRs")
 
     file_list = [heaviest_PR_file, all_training_file, SI_PR_file]
     output_lists = []
-
-    for file in file_list:
-        filepath = os.path.join(app.config['PROCESSED_TRAINING_DATA'], file)
     
-        with open(filepath, 'r') as open_file:
-            output_lists.append(json.load(open_file))
+    for file in file_list:
+        if file:
+            filepath = os.path.join(app.config['PROCESSED_TRAINING_DATA'], file)
+    
+            with open(filepath, 'r') as open_file:
+                output_lists.append(json.load(open_file))
+        else:
+            output_lists.append([]) # to render an empty list if no training data/respective file was not found
     return output_lists
 
 
@@ -444,9 +458,10 @@ def upload_file():
     """
     This function receives the file attached to the form submission for processing. 
     If file is found to not be of .csv/.txt or data validation fails, then file is deleted and error code is returned. 
-
-    TODO: Pass an argument to process_weight_log() that contains username. 
     """
+    heaviest_prs_data = []
+    SI_PR_data = []
+    all_training_data = []
     #Received object with form data is a list-like structure (immutable dict): 
     if len(request.form.getlist("uploadType")) == 0: # null check -- using string literal as JSON "none" was received
         print("Error: Form submission type not selected.")
@@ -456,7 +471,7 @@ def upload_file():
     
     if submission_type == "training":        
         uploaded_file = request.files['userUpload']
-        file_name = uploaded_file.filename
+        file_name = session["user_id"] + "_" + uploaded_file.filename
         
         if not file_name.endswith(VALID_EXTENSIONS): # .csv, .CSV, .txt or .TXT
             print("File is not of .txt or .csv")
@@ -475,9 +490,9 @@ def upload_file():
         heaviest_prs_data, SI_PR_data, all_training_data = process_training_log()
         
         # Save the data as JSON, in training_tables folder: 
-        heaviest_pr_filename = f"HeaviestPRs_username_{DATETIME_NOW}"
-        SI_PR_filename = f"SI_PRs_username_{DATETIME_NOW}"
-        all_training_data_filename = f"All_Training_Data_username_{DATETIME_NOW}"
+        heaviest_pr_filename = f"HeaviestPRs_{session['user_id']}_{DATETIME_NOW}"
+        SI_PR_filename = f"SI_PRs_{session['user_id']}_{DATETIME_NOW}"
+        all_training_data_filename = f"All_Training_Data_{session['user_id']}_{DATETIME_NOW}"
 
         filename_list = {heaviest_pr_filename:heaviest_prs_data, SI_PR_filename : SI_PR_data, all_training_data_filename: all_training_data}
 
@@ -569,6 +584,10 @@ def validate_CSV(file_name, type):
     return False
     
 def select_latest_csv(data_type):
+    """ This function selects the most recent CSV from the training_logs folder. 
+        Since it is used instantly, it should always return the CSV the user intends. 
+        Though, appending all uploaded files with the userID would be better logic. 
+    """
     log_dir = os.listdir(app.config[f"{data_type}"])    
     input_format = "%Y_%m_%d_%H_%M_%S" 
     output_iso_format = "%Y-%m-%dT%H:%M:%S"
@@ -576,10 +595,10 @@ def select_latest_csv(data_type):
     date_list = {} 
 
     if data_type == "WEIGHT_LOG_FOLDER":
-        file_prefix = "/FitNotes_BodyTracker_Export_" 
+        file_prefix = f"/{session['user_id']}_FitNotes_BodyTracker_Export_" 
 
     elif data_type == "TRAINING_LOG_FOLDER":
-        file_prefix = "/FitNotes_Export_" 
+        file_prefix = f"/{session['user_id']}_FitNotes_Export_" 
 
 
     #Check for most recent file, in weight log folder. Use that most recent folder to create JSON string archive file:
@@ -601,7 +620,7 @@ def select_latest_csv(data_type):
     filename = f"{file_prefix}{latest_fitnotes_file}{file_suffix}"
     return filename
 
-def select_latest_JSON(data_type, username):
+def select_latest_JSON(data_type):
     datetime_format = "%Y-%m-%d"
     date_list = []
 
@@ -611,21 +630,24 @@ def select_latest_JSON(data_type, username):
 
     elif data_type == "HeaviestPRs":
         log_dir = os.listdir(app.config['PROCESSED_TRAINING_DATA'])
-        file_prefix = "HeaviestPRs_" 
+        file_prefix = f"HeaviestPRs_" 
 
     elif data_type == "All_Training_Data":
         log_dir = os.listdir(app.config['PROCESSED_TRAINING_DATA'])
-        file_prefix = "All_Training_Data_" 
+        file_prefix = f"All_Training_Data_"
 
     elif data_type == "SI_PRs":
         log_dir = os.listdir(app.config['PROCESSED_TRAINING_DATA'])
-        file_prefix = "SI_PRs_" 
+        file_prefix = f"SI_PRs_" 
+
+    if not log_dir:
+        return "Folder Empty"
 
     for item in log_dir: 
         sliced_filename = item[item.index("202"):] #index between year and csv (inclusive of year but not csv)
         date_list.append(sliced_filename)
     
-    filename = f"{file_prefix}{username}_{str(max(date_list))}"
+    filename = f"{file_prefix}{session['user_id']}_{str(max(date_list))}"
     return filename
 
     
@@ -663,7 +685,7 @@ def process_weight_log():
     # take the last date entry as the most recent one -- create final output file name:
     latest_entry_date = log_entry_dates[len(log_entry_dates)-1]
 
-    output_filename = f"WeightLog_username_{latest_entry_date}"
+    output_filename = f"WeightLog_{session['user_id']}_{latest_entry_date}"
     output_filepath = os.path.join(app.config['LOG_ARCHIVE'], output_filename)
     print(f"Output file path in weight is: {output_filepath}")
 
@@ -700,9 +722,8 @@ def process_training_log():
             return round(SI_output,2)
         return 0
     
-    username = "Tommy"
     latest_training_csv = select_latest_csv("TRAINING_LOG_FOLDER")
-    latest_weight_json = select_latest_JSON("weight", username) 
+    latest_weight_json = select_latest_JSON("weight") 
     latest_weight_archive_location = os.path.join(app.config['LOG_ARCHIVE'] , latest_weight_json)
     df_format_archive = "%Y-%m-%d"
     drop_columns = ["Distance", "Distance Unit", "Time"]
@@ -811,6 +832,8 @@ def process_training_log():
     [heaviest_weight_prs.append(value) for value in heaviest_weight_helper_dict.values()]
     [strength_index_prs.append(value) for value in SI_PR_helper_dict.values()]
     all_training_data = df.to_dict('records') # 3. All lifts, unsorted.  
+
+    # Save each to /training_tabulator_data
     
     return heaviest_weight_prs, strength_index_prs, all_training_data
         
