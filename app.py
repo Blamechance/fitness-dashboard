@@ -6,15 +6,15 @@ import sqlite3
 
 
 from datetime import date, datetime, timedelta
-from flask import Flask, flash, redirect, render_template, request, session, jsonify, current_app
+from flask import Flask, redirect, render_template, request, session
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, Table, MetaData, Column, Integer, String, DateTime
 from sqlalchemy.orm import sessionmaker
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from json import loads, dumps
 from helpers import login_required, select_latest_csv, select_latest_JSON
+from app.blueprints import weight_processing_bp
 
 
 # Configure application - this lets flask know to use the "app.py" file
@@ -24,6 +24,9 @@ app = Flask(__name__)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
+
+# Registering blueprints
+app.register_blueprint(weight_processing_bp)
 
 
 # TODO: Check if db file exists, if not, create it. 
@@ -50,10 +53,11 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 # Define path to upload folders
-app.config['WEIGHT_LOG_FOLDER'] = 'files/weight_logs'
-app.config['TRAINING_LOG_FOLDER'] = 'files/training_logs'
-app.config['LOG_ARCHIVE'] = 'files/log_archive'
-app.config['PROCESSED_TRAINING_DATA'] = 'files/training_tabulator_data' # tabulator table data for heaviest PRs
+#app.config['WEIGHT_SUBMISSION_FOLDER'] = 'app/all_user_data/weight_data_submissions'
+#app.config['PROCESSED_WLOG_ARCHIVE'] = 'app/all_user_data/w_log_archive'
+
+app.config['TRAINING_SUBMISSION_FOLDER'] = 'app/all_user_data/training_data_submissions'
+app.config['PROCESSED_TRAINING_DATA'] = 'app/all_user_data/training_log_archive' # tabulator table data for heaviest PRs
 
 #Define appropriate CSV headers + byte length for validate function: 
 TRAINING_HEADERS = "Date,Exercise,Category,Weight,Weight Unit,Reps,Distance,Distance Unit,Time,Comment"
@@ -479,11 +483,11 @@ def upload_file():
         
         print("File name: ", file_name)
         #save to files folder -- extend this logic to ensure no duplicates: 
-        uploaded_file.save(os.path.join(app.config['TRAINING_LOG_FOLDER'], file_name))
+        uploaded_file.save(os.path.join(app.config['TRAINING_SUBMISSION_FOLDER'], file_name))
         
         if validate_CSV(file_name, submission_type) == False:
             print("Bad upload - validation failed. Deleting file.")
-            os.remove((os.path.join(app.config['TRAINING_LOG_FOLDER'], file_name)))
+            os.remove((os.path.join(app.config['TRAINING_SUBMISSION_FOLDER'], file_name)))
             return "File format error. Please export your file and try again. ", 400
         
         # Process the submitted training CSV to receive 3 lists of data: 
@@ -517,11 +521,11 @@ def upload_file():
         
         print("File name: ", file_name)
         #save to files folder -- extend this logic to ensure no duplicates: 
-        uploaded_file.save(os.path.join(app.config['WEIGHT_LOG_FOLDER'], file_name))
+        uploaded_file.save(os.path.join(app.config['WEIGHT_SUBMISSION_FOLDER'], file_name))
         validate_CSV(file_name, submission_type)
         
         if validate_CSV(file_name, submission_type) == False:
-            os.remove((os.path.join(app.config['WEIGHT_LOG_FOLDER'], file_name)))
+            os.remove((os.path.join(app.config['WEIGHT_SUBMISSION_FOLDER'], file_name)))
             print("Bad upload - validation failed. Deleting file.")
             return "File format error. Please export your file and try again. ", 400
         
@@ -539,7 +543,7 @@ def validate_CSV(file_name, type):
     """   
     if type == "training": 
         #set location of file: 
-        file_location = os.path.join(app.config['TRAINING_LOG_FOLDER'], file_name)
+        file_location = os.path.join(app.config['TRAINING_SUBMISSION_FOLDER'], file_name)
         
         #open uploaded file
         reader = open(file_location, "r")
@@ -561,7 +565,7 @@ def validate_CSV(file_name, type):
     
     if type == "weight":
         #set location of file: 
-        file_location = os.path.join(app.config['WEIGHT_LOG_FOLDER'], file_name)
+        file_location = os.path.join(app.config['WEIGHT_SUBMISSION_FOLDER'], file_name)
         
         #open uploaded file
         reader = open(file_location, "r")
@@ -592,8 +596,8 @@ def process_weight_log():
     # Parse for non-bodyweight rows to delete,
     # then drop irrelevant column in target file, creating a python dictionary of {date:weight} 
     # build file name using the date of the most recent submitted fitnotes sheet
-    filename = select_latest_csv("WEIGHT_LOG_FOLDER")
-    df = pd.read_csv(app.config['WEIGHT_LOG_FOLDER']+filename)
+    filename = select_latest_csv("WEIGHT_LOG_FOLDER", session['user_id'])
+    df = pd.read_csv(app.config['WEIGHT_SUBMISSION_FOLDER']+filename)
     drop_columns = ["Time", "Measurement", "Unit", "Comment"]
 
 
@@ -616,7 +620,7 @@ def process_weight_log():
     latest_entry_date = log_entry_dates[len(log_entry_dates)-1]
 
     output_filename = f"WeightLog_{session['user_id']}_{latest_entry_date}"
-    output_filepath = os.path.join(app.config['LOG_ARCHIVE'], output_filename)
+    output_filepath = os.path.join(app.config['PROCESSED_WLOG_ARCHIVE'], output_filename)
     print(f"Output file path in weight is: {output_filepath}")
 
     with open(output_filepath, 'w', encoding="utf-8") as final_json_output:
@@ -652,14 +656,14 @@ def process_training_log():
             return round(SI_output,2)
         return 0
     
-    latest_training_csv = select_latest_csv("TRAINING_LOG_FOLDER")
+    latest_training_csv = select_latest_csv("TRAINING_LOG_FOLDER", session['user_id'])
     latest_weight_json = select_latest_JSON("weight") 
-    latest_weight_archive_location = os.path.join(app.config['LOG_ARCHIVE'] , latest_weight_json)
+    latest_weight_archive_location = os.path.join(app.config['PROCESSED_WLOG_ARCHIVE'] , latest_weight_json)
     df_format_archive = "%Y-%m-%d"
     drop_columns = ["Distance", "Distance Unit", "Time"]
     
     # Drop all unrelated columns in dataframe + drop any sets of same details within same day + add columns for BW/SI
-    df = pd.read_csv(app.config['TRAINING_LOG_FOLDER']+latest_training_csv)
+    df = pd.read_csv(app.config['TRAINING_SUBMISSION_FOLDER']+latest_training_csv)
     df.drop(drop_columns, axis='columns', inplace=True)
     df.drop_duplicates(keep="first", inplace=True, ignore_index=True)
     
@@ -787,7 +791,7 @@ def json_string_to_weight_plots(axis, filename):
     """
     datetime_format = "%Y-%m-%d"
     axis_format = "%d %b, %Y" 
-    file_location = os.path.join(app.config['LOG_ARCHIVE'], filename)    
+    file_location = os.path.join(app.config['PROCESSED_WLOG_ARCHIVE'], filename)    
     
     with open(file_location) as reader:
         # Load the JSON string file into variable as a python dict
