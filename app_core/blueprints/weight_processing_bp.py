@@ -17,13 +17,13 @@ weight_processing_bp = Blueprint('weight_processing_bp', __name__)
 
 
 @weight_processing_bp.route('/blueprints')
-def process_weight_log():
+def process_weight_log(username):
     """
         This function is called when the user prompts a button on the check-in page of website. 
         - All sheets in the related file directories are processed to pull out relevant data into a  {"date":"weight"} JSON list. 
         - These JSON files will be backed up on the file system to operate as a "snapshot" in the archive folder. 
     """
-    filename = select_latest_csv("WEIGHT_LOG_FOLDER")
+    filename = select_latest_csv("WEIGHT_LOG_FOLDER", username)
     df = pd.read_csv(weight_submissions_folder+filename)
     drop_columns = ["Time", "Measurement", "Unit", "Comment"]
 
@@ -46,7 +46,6 @@ def process_weight_log():
 
     output_filename = f"WeightLog_{session['user_id']}_{latest_entry_date}"
     output_filepath = os.path.join(processed_w_data_folder, output_filename)
-    print(f"Output file path in weight is: {output_filepath}")
 
     with open(output_filepath, 'w', encoding="utf-8") as final_json_output:
         final_json_output.write(parsed_entries_string)

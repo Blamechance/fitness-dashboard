@@ -13,9 +13,18 @@ from sqlalchemy import create_engine, Table, MetaData, Column, Integer, String, 
 from sqlalchemy.orm import sessionmaker
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from helpers import login_required, select_latest_csv, select_latest_JSON
-from app_core.blueprints.weight_processing_bp import weight_processing_bp, json_string_to_weight_plots
+from helpers import login_required, select_latest_csv, select_latest_JSON, fetch3mXAxis, fetch6mXAxis, fetch12mXAxis, validate_CSV
+from app_core.blueprints.weight_processing_bp import weight_processing_bp, json_string_to_weight_plots, process_weight_log
+from app_core.blueprints.training_processing_bp import fetch_training_table_data, process_training_log
 
+
+CURRENT_TIME_DATE = datetime.now()
+current_month = int(CURRENT_TIME_DATE.strftime("%m")) # %m prints month as digit
+current_year = int(CURRENT_TIME_DATE.strftime("%Y")) #e.g 2013, 2019 etc.
+current_day = int(CURRENT_TIME_DATE.strftime("%-d")) #e.g 1, 17, 31 etc. 
+last_year = int(current_year) - 1
+
+DATETIME_NOW = date(current_year, current_month, current_day) 
 
 # Configure application - this lets flask know to use the "app.py" file
 app = Flask(__name__)
@@ -57,28 +66,6 @@ app.config['WEIGHT_SUBMISSION_FOLDER'] = 'app_core/all_user_data/weight_data_sub
 app.config['PROCESSED_WLOG_ARCHIVE'] = 'app_core/all_user_data/w_log_archive'
 app.config['TRAINING_SUBMISSION_FOLDER'] = 'app_core/all_user_data/training_data_submissions'
 app.config['PROCESSED_TRAINING_DATA'] = 'app_core/all_user_data/training_log_archive' # tabulator table data for heaviest PRs
-
-#Define appropriate CSV headers + byte length for validate function: 
-TRAINING_HEADERS = "Date,Exercise,Category,Weight,Weight Unit,Reps,Distance,Distance Unit,Time,Comment"
-
-WEIGHT_HEADERS = "Date,Time,Measurement,Value,Unit,Comment"
-T_HEADER_LENGTH = len(TRAINING_HEADERS) #works on logic that chars are one byte
-W_HEADER_LENGTH = len(WEIGHT_HEADERS)
-VALID_EXTENSIONS = ('.csv', '.txt', '.CSV', '.TXT')
-
-#current time/date: 
-CURRENT_TIME_DATE = datetime.now()
-
-
-#return the current month as a digit
-current_month = int(CURRENT_TIME_DATE.strftime("%m")) # %m prints month as digit
-current_year = int(CURRENT_TIME_DATE.strftime("%Y")) #e.g 2013, 2019 etc.
-current_day = int(CURRENT_TIME_DATE.strftime("%-d")) #e.g 1, 17, 31 etc. 
-last_year = int(current_year) - 1
-
-DATETIME_NOW = date(current_year, current_month, current_day) 
-
-print(f"DATETIME_NOW = {DATETIME_NOW}")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -216,7 +203,7 @@ def athlete():
         weight_graph_6m_points = json_string_to_weight_plots(x_axis_6, target_json_weight_file)
         weight_graph_3m_points = json_string_to_weight_plots(x_axis_3, target_json_weight_file)
         current_weight = weight_graph_3m_points[-1]
-        highest_W_table, all_training_table, SI_PR_table  = fetch_training_table_data()
+        highest_W_table, all_training_table, SI_PR_table  = fetch_training_table_data(session["user_id"])
         
         
         # Fetch table data to serve to user page: 
@@ -232,232 +219,11 @@ def athlete():
                                 all_training_table = all_training_table,
                                 SI_PR_table = SI_PR_table) 
             
-@app.route('/nathan', methods=["GET", "POST"])
-def nathan():
-    return render_template("nathan.html") 
-
-@app.route('/raymond', methods=["GET", "POST"])
-def raymond():
-    return render_template("raymond.html") 
-
-
-def fetch_training_table_data(): 
-    """
-        Fetchs the training table data and returns it as a JSON object. 
-    """
-    # empty initialisation in case no data: 
-    heaviest_PR_file = []
-    all_training_file = []
-    SI_PR_file = []
-
-    if not select_latest_JSON("HeaviestPRs", session["user_id"]) == "Folder Empty":
-        heaviest_PR_file = select_latest_JSON("HeaviestPRs", session["user_id"]) 
-    
-    if not select_latest_JSON("All_Training_Data", session["user_id"]) == "Folder Empty":
-        all_training_file = select_latest_JSON("All_Training_Data", session["user_id"]) 
-
-    if not select_latest_JSON("SI_PRs", session["user_id"]) == "Folder Empty":
-        SI_PR_file = select_latest_JSON("SI_PRs", session["user_id"])
-
-    file_list = [heaviest_PR_file, all_training_file, SI_PR_file]
-    output_lists = []
-    
-    for file in file_list:
-        if file:
-            filepath = os.path.join(app.config['PROCESSED_TRAINING_DATA'], file)
-    
-            with open(filepath, 'r') as open_file:
-                output_lists.append(json.load(open_file))
-        else:
-            output_lists.append([]) # to render an empty list if no training data/respective file was not found
-    return output_lists
-
-
-
-def fetch_days_in_month(input_month):
-    MONTHS_WITH_31_DAYS = [1, 3, 5, 7, 8, 10, 12]  # January, March, May, July, August, October, December
-    MONTHS_WITH_30_DAYS = [4, 6, 9, 11]  # April, June, September, November
-
-    if input_month in MONTHS_WITH_30_DAYS:
-        return 30
-    elif input_month in MONTHS_WITH_31_DAYS:
-        return 31
-    return 28
-
-# Following date functions should be refactored to decrement only before commiting a transaction.
-def fetch12mXAxis():
-    prev_12_months = []
-    target_month = int(current_month)
-    target_year= int(current_year)
-    target_day = int(current_day)
-
-    counter = 0
-
-    while counter < 12: 
-        if target_month == 1 and target_day < 31: # if month is Jan and not yet 31st, decrement to prev year Dec
-            target_month = 12
-            target_day = 31
-            target_year = target_year - 1
-            new_date = date(target_year, target_month, fetch_days_in_month(target_month))
-
-            # decrement
-            target_month -= 1
-            target_day = fetch_days_in_month(target_day)            
-
-        if target_day == fetch_days_in_month(target_month): #if last date of month, include current month: 
-            new_date = date(target_year, target_month, fetch_days_in_month(target_month))
-            if target_month == 1: # if month is jan, decrement properly now that object is made. 
-                target_month = 12
-                target_day = 31
-                target_year = target_year - 1
-            else:
-                target_month -= 1
-                target_day = fetch_days_in_month(target_month) 
-    
-        else: # if not yet last date of month, use last month: 
-            target_month -= 1
-            target_day = fetch_days_in_month(target_month) 
-            new_date = date(target_year, target_month, fetch_days_in_month(target_month))
-
-            # decrement: 
-            if target_month == 1: # if month is jan, decrement properly now that object is made. 
-                target_month = 12
-                target_day = 31
-                target_year = target_year - 1
-            else:
-                target_month -= 1
-                target_day = fetch_days_in_month(target_month)     
-        
-        new_axis_tick = new_date.strftime("%d %b, %Y")
-        prev_12_months.append(new_axis_tick)
-        counter += 1 
-
-    prev_12_months.reverse()
-    return prev_12_months
-
-
-
-def fetch6mXAxis():
-    """ Datetime object to create should be either 15th or last day of month, whichever has most recently lapsed. 
-    """
-    prev_6_months = []
-    target_year= int(current_year)
-    target_day = int(current_day)
-    target_month = int(current_month)
-    counter = 0  
-
-    while counter < 12: # Decrement datetime object, for next axis tick: 
-        if target_month == 1 and target_day == 15: # if date is Jan 15th, decrement to prev year Dec 31st / perfect case
-            new_date = date(target_year, target_month, target_day)
-            target_month = 12
-            target_year = target_year - 1
-            target_day = 31
-
-        elif target_day == fetch_days_in_month(target_month): # perfect case no decrement prior
-            new_date = date(target_year, target_month, target_day)
-            target_day = 15
-        
-        elif target_day >= 15: # if date is after 15th of month, set date to 15th of same month. 
-            target_day = 15
-            new_date = date(target_year, target_month, target_day)
-            
-            if target_month == 1:
-                target_month = 12
-                target_day = fetch_days_in_month(12)         
-
-            else:
-                target_month -= 1 # decrement month for next iteration   
-                target_day = fetch_days_in_month(target_month)         
-            
-        else: # else, if prior to month midpoint, set to last date of last month. 
-            if target_month == 1:
-                target_month = 12
-                target_day = fetch_days_in_month(target_month)
-                new_date = date(target_year, target_month, target_day)
-            else:
-                target_month -= 1 # decrement month for next iteration  
-                target_day = fetch_days_in_month(target_month)
-                new_date = date(target_year, target_month, target_day)
-
-            if target_month == 1: # decrement for next iteration
-                target_month = 12
-                target_day = fetch_days_in_month(12)         
-
-            else:
-                target_month -= 1 # decrement month for next iteration   
-                target_day = fetch_days_in_month(target_month)               
-        #create target month's datetimeobject and append to list
-        new_axis_tick = new_date.strftime("%d %b, %Y")
-        prev_6_months.append(new_axis_tick)
-
-        counter += 1 
-
-    prev_6_months.reverse()
-    return prev_6_months
-
-
-
-
-def fetch3mXAxis():
-    def closest_date_fact_7(input_date, input_month):
-        exact_match = [7,14,21]
-        if input_date in exact_match:
-            return input_date
-        if input_date == fetch_days_in_month(input_month):
-            return input_date
-        
-        if input_date < 7:
-            return fetch_days_in_month(input_month-1)
-        if input_date < 14:
-            return 7
-        if input_date < 21:
-            return 14
-        return 21 #else, if in last stretch of month, just return the last date. 
-    
-    prev_3_months = []
-    target_year= int(current_year)
-    target_day = int(current_day)
-    target_month = int(current_month)
-    counter = 0
- 
-    while counter < 12: # Decrement datetime object, for next axis tick: 
-        if target_month <= 1 and target_day == 7: # if date is Jan 7th, decrement to prev year Dec 31st
-            new_date = date(target_year, target_month, target_day)
-            target_month = 12
-            target_year = target_year - 1
-            target_day = 31
-        
-        elif target_day == fetch_days_in_month(target_month):
-            new_date = date(target_year, target_month, target_day)
-            target_day = 21
-
-        elif target_day >= 21:
-            target_day = 21
-            new_date = date(target_year, target_month, target_day)
-            target_day = 14
-
-        else: #else, decrement to closest date that is factor of 7. 
-            target_day = closest_date_fact_7(target_day, target_month)
-            new_date = date(target_year, target_month, target_day)
-
-            if target_day <= 7: 
-                target_day = fetch_days_in_month(target_month-1)
-                target_month = target_month-1
-            else: 
-                target_day -= 7
-
-        #create target month's datetimeobject and append to list
-        new_axis_tick = new_date.strftime("%d %b, %Y")
-        prev_3_months.append(new_axis_tick)
-
-        counter += 1 
-
-    prev_3_months.reverse()
-    return prev_3_months
-
     
 @app.route('/upload', methods=["POST"])
 def upload_file():
+    VALID_EXTENSIONS = ('.csv', '.txt', '.CSV', '.TXT')
+
     """
     This function receives the file attached to the form submission for processing. 
     If file is found to not be of .csv/.txt or data validation fails, then file is deleted and error code is returned. 
@@ -490,7 +256,7 @@ def upload_file():
             return "File format error. Please export your file and try again. ", 400
         
         # Process the submitted training CSV to receive 3 lists of data: 
-        heaviest_prs_data, SI_PR_data, all_training_data = process_training_log()
+        heaviest_prs_data, SI_PR_data, all_training_data = process_training_log(session['user_id'])
         
         # Save the data as JSON, in training_tables folder: 
         heaviest_pr_filename = f"HeaviestPRs_{session['user_id']}_{DATETIME_NOW}"
@@ -528,247 +294,10 @@ def upload_file():
             print("Bad upload - validation failed. Deleting file.")
             return "File format error. Please export your file and try again. ", 400
         
-        process_weight_log()
+        process_weight_log(session['user_id'])
         return "Server file upload Success."
 
     return "Upload Error Occurred. Please contact Admin.", 400
 
-def validate_CSV(file_name, type):
-    """
-    This function checks that the uploaded file is:
-     - A text/CSV file
-     - of correct header format and length, for the respective chosen file type
-     
-    """   
-    if type == "training": 
-        #set location of file: 
-        file_location = os.path.join(app.config['TRAINING_SUBMISSION_FOLDER'], file_name)
-        
-        #open uploaded file
-        reader = open(file_location, "r")
-        reader.flush()
-        
-        #read all file contents: 
-        file_headers = reader.read(T_HEADER_LENGTH)
-        
-        #check if headers are as expected: 
-        if file_headers == TRAINING_HEADERS:
-            print("Training file headers are valid -  in submission. Uploading file. ")
-            reader.close
-            return True
-
-        else: # delete the file from directory and return error 400 to user as file is invalid
-            print("CSV file not in expected format - aborting upload.")
-            reader.close
-            return False 
-    
-    if type == "weight":
-        #set location of file: 
-        file_location = os.path.join(app.config['WEIGHT_SUBMISSION_FOLDER'], file_name)
-        
-        #open uploaded file
-        reader = open(file_location, "r")
-        reader.flush()
-        
-        #read all file contents: 
-        file_headers = reader.read(W_HEADER_LENGTH)
-        
-        #check if headers are as expected: 
-        if file_headers == WEIGHT_HEADERS:
-            reader.close
-            return True
-
-        else: # delete the file from directory and return error 400 to user as file is invalid
-            print("CSV file not in expected format - aborting upload.")
-            reader.close
-            return False 
-    return False
-       
-
-def process_weight_log():
-
-    """
-        This function is called when the user prompts a button on the check-in page of website. 
-        - All sheets in the related file directories are processed to pull out relevant data into a  {"date":"weight"} JSON list. 
-        - These JSON files will be backed up on the file system to operate as a "snapshot" in the archive folder. 
-    """
-    # Parse for non-bodyweight rows to delete,
-    # then drop irrelevant column in target file, creating a python dictionary of {date:weight} 
-    # build file name using the date of the most recent submitted fitnotes sheet
-    filename = select_latest_csv("WEIGHT_LOG_FOLDER", session['user_id'])
-    df = pd.read_csv(app.config['WEIGHT_SUBMISSION_FOLDER']+filename)
-    drop_columns = ["Time", "Measurement", "Unit", "Comment"]
-
-
-
-    # use pandas to extract log entry dates and weights, but only if it's bodyweight data
-    df = df.loc[df["Measurement"] == "Bodyweight" ]
-    cleaned_df = df.drop(drop_columns, axis='columns')
-    parsed_entries_string = cleaned_df.to_json(orient='split') #argument to convert output to json string
-
-    # load that data into a string of dates. 
-    loaded_entries = json.loads(parsed_entries_string)
-    log_entry_data = loaded_entries["data"]
-    log_entry_dates = []
-
-    for item in log_entry_data:
-        log_entry_dates.append(item[0])
-
-
-    # take the last date entry as the most recent one -- create final output file name:
-    latest_entry_date = log_entry_dates[len(log_entry_dates)-1]
-
-    output_filename = f"WeightLog_{session['user_id']}_{latest_entry_date}"
-    output_filepath = os.path.join(app.config['PROCESSED_WLOG_ARCHIVE'], output_filename)
-    print(f"Output file path in weight is: {output_filepath}")
-
-    with open(output_filepath, 'w', encoding="utf-8") as final_json_output:
-        final_json_output.write(parsed_entries_string)
-
-    return "Entered process_csv."
-
-def process_training_log():
-    def calculate_SI(index):
-        """
-        This function takes a df row of the training data, and uses it to return a 
-        strength index score. 
-        
-        The key for the rep range factor represents the lower and upper rep count for each range. 
-        The value representing the factor to use in the calculation. 
-        if the rep range is outside of the rep_range_factor, then return "N/A". 
-        """
-        rep_count = df.at[index, "Reps"]
-        rep_range_factor = {
-            (1, 2):3.3,
-            (3,6):1.4,
-            (7,10):1,
-            (11,15):0.8,
-        }
-        
-        if rep_count < 15 and rep_count > 1:
-            for key, value in rep_range_factor.items(): # for each range in the rep_rage dict, what factor current reps should get: 
-                if rep_count >= key[0] and rep_count <= key[1]: 
-                    factor = value
-                    break
-            rep_count = df.loc[index]
-            SI_output = (df.at[index, "Reps"] * df.at[index, "Weight"] * 10) / (df.at[index, "Bodyweight"] * factor)
-            return round(SI_output,2)
-        return 0
-    
-    latest_training_csv = select_latest_csv("TRAINING_LOG_FOLDER", session['user_id'])
-    latest_weight_json = select_latest_JSON("weight") 
-    latest_weight_archive_location = os.path.join(app.config['PROCESSED_WLOG_ARCHIVE'] , latest_weight_json)
-    df_format_archive = "%Y-%m-%d"
-    drop_columns = ["Distance", "Distance Unit", "Time"]
-    
-    # Drop all unrelated columns in dataframe + drop any sets of same details within same day + add columns for BW/SI
-    df = pd.read_csv(app.config['TRAINING_SUBMISSION_FOLDER']+latest_training_csv)
-    df.drop(drop_columns, axis='columns', inplace=True)
-    df.drop_duplicates(keep="first", inplace=True, ignore_index=True)
-    
-    # convert all NaN fields to a generic datatypes for easier handling 
-    df['Comment'] = df['Comment'].fillna("N/A") 
-    df['Weight'] = df['Weight'].fillna(0) 
-    df['Weight Unit'] = df['Weight Unit'].fillna("kgs") 
-    df['Reps'] = df['Reps'].fillna(0) 
-
-    # This loop iterates through each of the training log data rows to do the following: 
-    # 1. Takes the date the lift was executed to seach through the most recent weight log archive file. 
-    #    Any weight entries for dates +/-3 days from lift date, get averaged and appended to the row.
-    # 2. Using the user weight and weight lifted, calculate a strength index. 
-    # 3. If no matches at all, set BW + Strength Index to 00. 
-    
-    for index, row in df.iterrows():
-        lift_date = datetime.strftime(datetime.strptime(row["Date"], df_format_archive), df_format_archive) # date as string
-        
-        # Define the 7 day window as a list of dates:
-        lower_date = datetime.strptime(lift_date, df_format_archive) - timedelta(days=3)
-        search_dates = []
-        matching_weight = [] 
-
-        # helper dicts to store df rows, of {exercise_name:{dicts of lift details}}
-        heaviest_weight_helper_dict = {} # list containing dicts of exercises that are the top PR's 
-        SI_PR_helper_dict = {}
-    
-
-        # Following are the output lists to return: 
-        heaviest_weight_prs = []
-        strength_index_prs = []
-        all_training_data = []
-
-        for i in range(7):
-            search_dates.append((lower_date + timedelta(days=i)).strftime(df_format_archive))
-
-        # Parse through the JSON archive file to check if there are any weight check-ins matching any of the dates. 
-        # if so, average all matching dates and return -- otherwise, return None: 
-        with open(latest_weight_archive_location) as reader:
-            # Load the JSON string file into variable as a python dict
-            WLog_entries_dict = json.loads(reader.read()) 
-            for pair in WLog_entries_dict["data"]:
-                if pair[0] == lift_date:
-                    matching_weight.append(pair[1]) # otherwise, append close dates to list
-                    df.at[index, 'Bodyweight'] = pair[1] # if precise weight record found, return just that
-                    continue
-                
-                if pair[0] in search_dates:
-                    matching_weight.append(pair[1]) # otherwise, append close dates to list
-                    
-        # If not weight data, skip appending BW + SI: 
-        if not matching_weight:    
-            df.at[index, 'Bodyweight'] = 0
-            df.at[index, 'Strength Index'] = 0
-            continue
-        
-        # Otherwise, append found weight to df + calculate strength index. 
-        average_weight = round(sum(matching_weight) / len(matching_weight), 2) # average the list of close weight records to return result
-        df.at[index, 'Bodyweight'] = average_weight # Update the 'Bodyweight' of the current row      
-        
-        # Update the 'Strength Index' of the current row  
-        s_index = calculate_SI(index)
-        df.at[index, 'Strength Index'] = s_index     
-
-    for index, row in df.iterrows():
-       ### 1. Iterate over df, searching for heaviest weight PRs to append: 
-        # Check if the PR list contains a dict entry with the same key as this exerise - if not, append this one as {ex_name: entire_row}
-        if df.at[index, 'Exercise'] not in heaviest_weight_helper_dict: 
-            heaviest_weight_helper_dict[df.at[index, 'Exercise']] = row.to_dict()
-        
-        # if exists and current row is better than one in PR, replace it. Table data will hold date lift was first hit:         
-        for exercise, lift_data in heaviest_weight_helper_dict.items():    
-            #only replace row if more reps and more weight, or same weight and higher reps        
-            if df.at[index, 'Weight'] > lift_data["Weight"] and df.at[index, 'Exercise'] == exercise:
-                heaviest_weight_helper_dict[exercise] = row.to_dict()
-                      
-            elif df.at[index, 'Weight'] == lift_data["Weight"] and df.at[index, 'Exercise'] == exercise and df.at[index, "Reps"] > lift_data["Reps"]: 
-                heaviest_weight_helper_dict[exercise] = row.to_dict()   
-
-    ### 2. Iterate over df, searching for Highest Strength Index Lifts to append:
-        if df.at[index, 'Exercise'] not in SI_PR_helper_dict and df.at[index, 'Strength Index'] > 0 : 
-            SI_PR_helper_dict[df.at[index, 'Exercise']] = row.to_dict()
-        
-        # if exists and current row is better than one in PR, replace it. Table data will hold date lift was first hit:         
-        for exercise, lift_data in SI_PR_helper_dict.items():
-            # if no strength index data, skip row: 
-            if df.at[index, 'Strength Index'] == 0:
-                continue    
-
-            # if new row has better strength index for the exercise, update it:         
-            if df.at[index, 'Strength Index'] > lift_data["Strength Index"] and df.at[index, 'Exercise'] == exercise:
-                SI_PR_helper_dict[exercise] = row.to_dict()
-
-            # if matched in strength index, update anyway for more current data:           
-            elif df.at[index, 'Strength Index'] == lift_data["Strength Index"] and df.at[index, 'Exercise'] == exercise: 
-                SI_PR_helper_dict[exercise] = row.to_dict()   
-
-
-    # output aggregated data as list of dicts, to be parsed into JSON later: 
-    [heaviest_weight_prs.append(value) for value in heaviest_weight_helper_dict.values()]
-    [strength_index_prs.append(value) for value in SI_PR_helper_dict.values()]
-    all_training_data = df.to_dict('records') # 3. All lifts, unsorted.  
-
-    # Save each to /training_tabulator_data
-    
-    return heaviest_weight_prs, strength_index_prs, all_training_data
-    
 if __name__ == "__main__":
     app.run(debug=True)
