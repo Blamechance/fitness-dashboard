@@ -1,12 +1,12 @@
 from functools import wraps
 from flask import redirect,redirect, session
-
+import os
 from datetime import datetime
 
-training_submissions_folder = "app/all_user_data/training_data_submissions"
-weight_submissions_folder = "app/all_user_data/weight_data_submissions"
-processed_w_data_folder = "app/all_user_data/w_log_archive"
-processed_t_data_folder = "app/all_user_data/training_log_archive"
+training_submissions_folder = "app_core/all_user_data/training_data_submissions"
+weight_submissions_folder = "app_core/all_user_data/weight_data_submissions"
+processed_w_data_folder = "app_core/all_user_data/w_log_archive"
+processed_t_data_folder = "app_core/all_user_data/training_log_archive"
 
 
 def login_required(f):
@@ -46,7 +46,7 @@ def select_latest_csv(data_type, username):
 
     #NOTE: Wrap in a try-except so the except can delete temp file on error.
 
-    for item in log_dir: 
+    for item in os.listdir(log_dir): 
         sliced_filename = item[item.index("202"):item.index(".csv")] #index between year and csv (inclusive of year but not csv)
         unformatted_date = datetime.strptime(sliced_filename, input_format)
         iso_date = unformatted_date.strftime(output_iso_format)
@@ -79,7 +79,9 @@ def select_latest_JSON(data_type, username):
     if not log_dir:
         return "Folder Empty"
 
-    for item in log_dir: 
+    for item in os.listdir(log_dir): 
+        print(f"item: {item}")
+        print(f"item: {log_dir}")
         sliced_filename = item[item.index("202"):] #index between year and csv (inclusive of year but not csv)
         date_list.append(sliced_filename)
     

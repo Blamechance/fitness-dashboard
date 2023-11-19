@@ -14,7 +14,7 @@ from sqlalchemy.orm import sessionmaker
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from helpers import login_required, select_latest_csv, select_latest_JSON
-from app.blueprints import weight_processing_bp
+from app_core.blueprints.weight_processing_bp import weight_processing_bp
 
 
 # Configure application - this lets flask know to use the "app.py" file
@@ -53,11 +53,10 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 # Define path to upload folders
-#app.config['WEIGHT_SUBMISSION_FOLDER'] = 'app/all_user_data/weight_data_submissions'
-#app.config['PROCESSED_WLOG_ARCHIVE'] = 'app/all_user_data/w_log_archive'
-
-app.config['TRAINING_SUBMISSION_FOLDER'] = 'app/all_user_data/training_data_submissions'
-app.config['PROCESSED_TRAINING_DATA'] = 'app/all_user_data/training_log_archive' # tabulator table data for heaviest PRs
+app.config['WEIGHT_SUBMISSION_FOLDER'] = 'app/all_user_data/weight_data_submissions'
+app.config['PROCESSED_WLOG_ARCHIVE'] = 'app/all_user_data/w_log_archive'
+app.config['TRAINING_SUBMISSION_FOLDER'] = 'app_core/all_user_data/training_data_submissions'
+app.config['PROCESSED_TRAINING_DATA'] = 'app_core/all_user_data/training_log_archive' # tabulator table data for heaviest PRs
 
 #Define appropriate CSV headers + byte length for validate function: 
 TRAINING_HEADERS = "Date,Exercise,Category,Weight,Weight Unit,Reps,Distance,Distance Unit,Time,Comment"
@@ -210,7 +209,7 @@ def athlete():
         return render_template("athlete.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
 
     else: # GET method indicates user put address to route to the function.  
-        target_json_weight_file = select_latest_JSON("weight") # find the weight archive to load, for this user 
+        target_json_weight_file = select_latest_JSON("weight", session["user_id"]) # find the weight archive to load, for this user 
         
         # process most current JSON archive file with axis list to find average points to graph. 
         weight_graph_12m_points = json_string_to_weight_plots(x_axis_12, target_json_weight_file)

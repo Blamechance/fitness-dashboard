@@ -2,21 +2,17 @@ import pandas as pd
 import json
 import os
 
-from ...helpers import select_latest_csv
+from helpers import select_latest_csv
 from flask import session, Blueprint
 
 
-weight_submissions_folder = 'app/all_user_data/weight_data_submissions'
-processed_w_data_folder = 'app/all_user_data/w_log_archive'
+weight_submissions_folder = 'app_core/all_user_data/weight_data_submissions'
+processed_w_data_folder = 'app_core/all_user_data/w_log_archive'
 
 
 
 # Define blueprint
-weight_processing_bp = Blueprint(
-    'weight_processing_bp', __name__,
-    template_folder='templates',
-    static_folder='static'
-)
+weight_processing_bp = Blueprint('weight_processing_bp', __name__)
 
 @weight_processing_bp.route('/blueprints')
 def process_weight_log():
