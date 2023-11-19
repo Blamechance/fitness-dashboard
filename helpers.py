@@ -80,8 +80,6 @@ def select_latest_JSON(data_type, username):
         return "Folder Empty"
 
     for item in os.listdir(log_dir): 
-        print(f"item: {item}")
-        print(f"item: {log_dir}")
         sliced_filename = item[item.index("202"):] #index between year and csv (inclusive of year but not csv)
         date_list.append(sliced_filename)
     
