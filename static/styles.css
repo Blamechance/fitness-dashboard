@@ -4,6 +4,21 @@
 
 }
 
+.navbar {
+    background-color: #3A6A59;
+    color: #B9C8BC;
+
+}
+
+.navbar-brand {
+    color: #B9C8BC;
+}
+
+.nav-link {
+    color: #B9C8BC;
+
+}
+
 h1 {
     text-align: center;
 }
@@ -16,18 +31,22 @@ canvas{
     margin: 0 auto;
     }
 
-body {background-color: #E8E6DC;}
+body {background-color: #CFCDC2;}
 
-
-input[type=button], input[type=submit] {
-    background-color: #878057;
-    border: none;
-    border-radius:10px;
+button {
+    background-color: #3A6A59;
     color: white;
-    padding: 4px 4px;
-    text-decoration: none;
-    margin: 2px 2px;
+    padding: 4px 20px;
+    border: none;
+    border-radius: 5px;
     cursor: pointer;
-    align-items: center;
     }
 
+input[type="submit"] {
+    background-color: #3A6A59;
+    color: white;
+    padding: 4px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
