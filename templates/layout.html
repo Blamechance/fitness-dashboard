@@ -75,7 +75,7 @@
 
             <div> 
               {% if session["user_id"] %} 
-                <p class="logged-in-banner"> Welcome back, {{ session["user_id"] }}! </p> 
+                <p class="logged-in-banner"> Welcome back, {{ session["user_id"] | capitalize() }}! </p> 
               {% endif %} 
             </div>
           </nav>
