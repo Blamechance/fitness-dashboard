@@ -1,8 +1,8 @@
 import os
 import datetime
 import json
-import pandas as pd
 import sqlite3
+import pandas as pd
 
 
 from datetime import date, datetime, timedelta
@@ -39,7 +39,7 @@ Session(app)
 app.register_blueprint(weight_processing_bp)
 
 
-# TODO: Check if db file exists, if not, create it. 
+# TODO: Check if db file exists, if not, create it
 
 # Configure the user DB and engine for DB operations:
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
@@ -81,8 +81,7 @@ def login():
 
         # Ensure username was submitted
         if not request.form.get("username").lower():
-            error = "Please provide a username!"
-            
+            error = "Please provide a username!"          
 
         # Ensure password was submitted
         elif not request.form.get("password"):
@@ -136,7 +135,7 @@ def register():
 
         if name_check:
             error = "Sorry, Username already exists - please try another one!"
-            print(f"user exists - returning error.")
+            print("user exists - returning error.")
             return render_template("register.html", error=error)
 
         new_password = request.form.get("password")
@@ -196,39 +195,38 @@ def athlete():
     if request.method == "POST": # POST method indicates user was redirected to function by another. 
         return render_template("athlete.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
 
-    else: # GET method indicates user put address to route to the function.  
-        target_json_weight_file = select_latest_JSON("weight", session["user_id"]) # find the weight archive to load, for this user 
-        
-        # process most current JSON archive file with axis list to find average points to graph. 
-        weight_graph_12m_points = json_string_to_weight_plots(x_axis_12, target_json_weight_file)
-        weight_graph_6m_points = json_string_to_weight_plots(x_axis_6, target_json_weight_file)
-        weight_graph_3m_points = json_string_to_weight_plots(x_axis_3, target_json_weight_file)
-        current_weight = weight_graph_3m_points[-1]
-        highest_W_table, all_training_table, SI_PR_table  = fetch_training_table_data(session["user_id"])
+    target_json_weight_file = select_latest_JSON("weight", session["user_id"]) # find the weight archive to load, for this user 
+    
+    # process most current JSON archive file with axis list to find average points to graph. 
+    weight_graph_12m_points = json_string_to_weight_plots(x_axis_12, target_json_weight_file)
+    weight_graph_6m_points = json_string_to_weight_plots(x_axis_6, target_json_weight_file)
+    weight_graph_3m_points = json_string_to_weight_plots(x_axis_3, target_json_weight_file)
+    current_weight = weight_graph_3m_points[-1]
+    highest_W_table, all_training_table, SI_PR_table  = fetch_training_table_data(session["user_id"])
         
         
         # Fetch table data to serve to user page: 
         
-        return render_template("athlete_dashboard.html",
-                               current_username = current_username,
-                               x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6,
-                                weight_graph_12m_points = weight_graph_12m_points,
-                                weight_graph_6m_points = weight_graph_6m_points,
-                                weight_graph_3m_points = weight_graph_3m_points,
-                                current_weight = current_weight,
-                                highest_W_table = highest_W_table,
-                                all_training_table = all_training_table,
-                                SI_PR_table = SI_PR_table) 
+    return render_template("athlete_dashboard.html",
+                            current_username = current_username,
+                            x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6,
+                            weight_graph_12m_points = weight_graph_12m_points,
+                            weight_graph_6m_points = weight_graph_6m_points,
+                            weight_graph_3m_points = weight_graph_3m_points,
+                            current_weight = current_weight,
+                            highest_W_table = highest_W_table,
+                            all_training_table = all_training_table,
+                            SI_PR_table = SI_PR_table) 
             
     
 @app.route('/upload', methods=["POST"])
 def upload_file():
-    VALID_EXTENSIONS = ('.csv', '.txt', '.CSV', '.TXT')
-
     """
     This function receives the file attached to the form submission for processing. 
     If file is found to not be of .csv/.txt or data validation fails, then file is deleted and error code is returned. 
     """
+
+    VALID_EXTENSIONS = ('.csv', '.txt', '.CSV', '.TXT')
     heaviest_prs_data = []
     SI_PR_data = []
     all_training_data = []
