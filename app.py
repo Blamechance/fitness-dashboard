@@ -288,7 +288,7 @@ def upload_file():
         uploaded_file.save(os.path.join(app.config['WEIGHT_SUBMISSION_FOLDER'], file_name))
         validate_CSV(file_name, submission_type)
         
-        if validate_CSV(file_name, submission_type) == False:
+        if not validate_CSV(file_name, submission_type):
             os.remove((os.path.join(app.config['WEIGHT_SUBMISSION_FOLDER'], file_name)))
             print("Bad upload - validation failed. Deleting file.")
             return "File format error. Please export your file and try again. ", 400

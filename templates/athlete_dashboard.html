@@ -2,23 +2,16 @@
 
 {% block main %}
 
-<h1> {{ current_username }}'s statistics </h1>
-<p>Hello, World - this is {{ current_username }}.</p>
+<h1> Welcome back, {{ current_username }}! </h1>
 
-<h3> Bodyweight Tracking:</h3>
+<div class="med-content-container">
+    <h3> Bodyweight Tracking:</h3>
 
-<canvas id="weightGraph" style="max-width: 60%;"></canvas>
+    <canvas id="weightGraph" style="max-width: 60%;"></canvas>
 
-<button id="3m-button" type="button">3 Months</button>
-<button id="6m-button" type="button">6 Months</button>
-<button id="12m-button" type="button">12 Months</button>
+</div>
 
-<h3> Athlete Last Recorded Average Weight : </h3>
-<h6> (7 Day average) </h6>
-<h5> {{ current_weight | safe }} kgs </h5>
-
-
-<!-- Weight Graph -->
+<!-- Weight Graph Scripts -->
 <script>
     //Configure default chart to be loaded on page render:
     const weightChartData = {
@@ -45,6 +38,22 @@
     });
 
 </script>
+
+
+
+<div class="button-container">
+    <h6> Click to change shown period:</h6>
+
+    <button id="3m-button" type="button" class="graph-button">3 Months</button>
+    <button id="6m-button" type="button" class="graph-button">6 Months</button>
+    <button id="12m-button" type="button" class="graph-button" >12 Months</button>
+</div>
+<br>
+
+<h3> Athlete Last Recorded Average Weight : </h3>
+<h6> (7 Day average) </h6>
+<h5> {{ current_weight | safe }} kgs </h5>
+
 
 <!-- All data served from backend is kept as python data structures -- thus they are served by escaping chars with tojson first,-->
 <!-- As well as being json.parse() into a JSON object to be used in the scripts-->
