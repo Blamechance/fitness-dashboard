@@ -179,6 +179,11 @@ def teamDashboard():
 def faq():
     return render_template("faq.html") 
 
+@app.route('/tdee', methods=["GET", "POST"])
+@login_required
+def tdee():
+    return render_template("tdee.html") 
+
 
 @app.route('/checkin', methods=["GET", "POST"])
 @login_required

@@ -110,7 +110,7 @@ h3 {
 }
 
 p {
-    font-size: 16px;
+    font-size: 14px;
     text-align: left;
 }
 
@@ -181,10 +181,10 @@ table, th, td {
     border: 1px solid black;
     }
 
-li {
-font-size: 14px;
-text-align: left;
-}
+    li {
+        font-size: 14px;
+        text-align: left;
+        }
 
 
 /* The following will only trigger when the screen size is wider than the mid-width. */
@@ -221,4 +221,14 @@ text-align: left;
         margin: 0 auto;
     }
 
+
+    li {
+        font-size: 16px;
+        text-align: left;
+        }
+
+        p {
+            font-size: 16px;
+            text-align: left;
+        }
 }

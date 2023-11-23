@@ -35,7 +35,7 @@
 <script>
     //Configure default chart to be loaded on page render:
     const weightChartData = {
-        labels: JSON.parse('{{ x_axis_12 | tojson }}'),
+        labels: JSON.parse('{{ x_axis_3 | tojson }}'),
         datasets: [{
             label: "Weight (kg)", 
             data: JSON.parse('{{ weight_graph_12m_points | tojson }}'),
@@ -227,10 +227,10 @@
         groupBy:"Category",
         layout:"fitColumns", //fit columns to width of table (optional)
         columns:[ //Define Table Columns
-            {title:"Exercise", field:"Exercise", minWidth:180, frozen:true, headerFilter: "input"},
-            {title:"Weight (kgs)", field:"Weight", hozAlign:"center", maxWidth:120, headerFilter: "input"},
+            {title:"Exercise", field:"Exercise", minWidth:200, frozen:true, headerFilter: "input"},
+            {title:"Weight (kgs)", field:"Weight", hozAlign:"center", minWidth:100, maxWidth:120, headerFilter: "input"},
             {title:"Reps", field:"Reps", hozAlign:"center", width:75, headerFilter: "number"},
-            {title:"Date Achieved", field:"Date", sorter:"date", hozAlign:"center", maxWidth:150, headerFilter: "input"},
+            {title:"Date Achieved", field:"Date", sorter:"date", hozAlign:"center", minWidth:100, headerFilter: "input"},
             {title:"Strength Index", field: "Strength Index", hozAlign:"center"},
             {title:"Bodyweight (kgs)", field:"Bodyweight", hozAlign:"center"},
             {title:"Comment", field:"Comment", minWidth:300, headerFilter: "input"},

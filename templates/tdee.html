@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    TDEE Calculator - Coming Soon!
+{% endblock %}
+
+{% block main %}
+<script>
+    function highlightActiveNav() {
+        var activeNavPage = document.getElementsByName("nav-tdee");
+        if (activeNavPage.length > 0) {
+            activeNavPage[0].classList.add('nav-active');
+        }
+    }
+
+    window.onload = function() {
+        highlightActiveNav();
+    };
+ </script>
+
+<h1> Coming Soon!</h1>
+{% endblock %}
