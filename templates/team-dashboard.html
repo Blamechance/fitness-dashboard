@@ -6,6 +6,22 @@
 
 {% block main %}
 
+<!-- Nav bar highlighting for current page -->
+<script>
+  function highlightActiveNav() {
+      var activeNavPage = document.getElementsByName("nav-team-dashboard");
+      if (activeNavPage.length > 0) {
+          activeNavPage[0].classList.add('nav-active');
+      }
+  }
+
+  window.onload = function() {
+      highlightActiveNav();
+  };
+</script>
+
+
+
 <h1> Team Dashboard </h1>
 <br>
 

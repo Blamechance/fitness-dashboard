@@ -37,46 +37,46 @@
         
     </head>
 
-    <body onload="syncDate()">
+    <body onload="syncDate();">
         <!--Create nav bar-->
         <nav class="navbar navbar-expand-lg navbar-light">
-            <a class="navbar-brand" href="/">Fitness Dashboard</a>
+            <a class="navbar-brand navbar-brand-text" href="/">Fitness Dashboard</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
               <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse" id="navbarNavDropdown">
+
+            <div class="collapse navbar-collapse navbar-link-text" id="navbarNavDropdown">
               <ul class="navbar-nav">
               {% if session["user_id"] %}
                 <li class="nav-item">
-                  <a class="nav-link" href="/team-dashboard">Team Dashboard</a>
+                  <a class="nav-link" href="/team-dashboard" name="nav-team-dashboard">Team Dashboard</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/checkin">Monthly Check-in</a>
+                    <a class="nav-link" href="/checkin" name="nav--check-in" >Monthly Check-in</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" href="/athlete_dashboard">Training Dashboard</a>
+                  <a class="nav-link" href="/my_dashboard" name="nav-my-dashboard" >My Dashboard</a>
               </li>
               {% endif %}
               {% if not session["user_id"] %}
                 <li class="nav-item">
-                  <a class="nav-link" href="/login">Login</a>
+                  <a class="nav-link" href="/login" name="nav-login" >Login</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" href="/register">Register</a>
+                  <a class="nav-link" href="/register" name="nav-register" >Register</a>
                 </li>
               {% endif %}
 
               {% if session["user_id"] %} 
-                <a class="nav-link" href="/logout">Log Out</a>
+                <a class="nav-link" href="/logout" name="nav-logout" >Log Out</a>
               {% endif %}
-
               </ul>
-            </div>
 
-            <div> 
               {% if session["user_id"] %} 
-                <p class="logged-in-banner"> Welcome back, {{ session["user_id"] | capitalize() }}! </p> 
-              {% endif %} 
+                <span class="navbar-text navbar-message navbar-message-mobile"> 
+                  Welcome back, {{ session["user_id"] | capitalize() }}! 
+                </span>
+              {% endif %}
             </div>
           </nav>
 

@@ -2,14 +2,28 @@
 
 {% block main %}
 
+<!-- Nav bar highlighting for current page -->
+<script>
+    function highlightActiveNav() {
+        var activeNavPage = document.getElementsByName("nav-my-dashboard");
+        if (activeNavPage.length > 0) {
+            activeNavPage[0].classList.add('nav-active');
+        }
+    }
+
+    window.onload = function() {
+        highlightActiveNav();
+    };
+ </script>
+
 <h1> Welcome back, {{ current_username }}! </h1>
 
 <div class="med-content-container">
-    <h3> Bodyweight Tracking:</h3>
-
-    <canvas id="weightGraph" style="max-width: 60%;"></canvas>
-
+    <h3> Weight Tracking:</h3>
 </div>
+
+<canvas id="weightGraph" style="min-height: 50%; max-width: 60%;"></canvas>
+
 
 <!-- Weight Graph Scripts -->
 <script>
@@ -44,15 +58,38 @@
 <div class="button-container">
     <h6> Click to change shown period:</h6>
 
-    <button id="3m-button" type="button" class="graph-button">3 Months</button>
+    <button id="3m-button" type="button" class="graph-button active" >3 Months</button>
     <button id="6m-button" type="button" class="graph-button">6 Months</button>
-    <button id="12m-button" type="button" class="graph-button" >12 Months</button>
+    <button id="12m-button" type="button" class="graph-button">12 Months</button>
 </div>
+
+<script>
+    var buttons = document.getElementsByClassName('graph-button');
+
+    for (var i = 0; i < buttons.length; i++) {
+   buttons[i].addEventListener('click', function() {
+
+       // Remove active class from all buttons
+       for (var j = 0; j < buttons.length; j++) {
+           buttons[j].classList.remove('active');
+       }
+
+       // Add class to the clicked button
+       this.classList.add('active');
+
+   });
+}
+</script>
+
+
 <br>
 
-<h3> Athlete Last Recorded Average Weight : </h3>
-<h6> (7 Day average) </h6>
-<h5> {{ current_weight | safe }} kgs </h5>
+<div class="small-content-container">
+    <h3> Athlete Last Recorded Average Weight : </h3>
+    <h6> (7 Day average) </h6>
+    <h5> {{ current_weight | safe }} kgs </h5>
+</div>
+
 
 
 <!-- All data served from backend is kept as python data structures -- thus they are served by escaping chars with tojson first,-->
@@ -113,28 +150,30 @@
     });
 </script>
 
+<div class="small-content-container">
 
-<h3> Analysing Training Data:</h3>
-<p> 
-    The Strength Index (SI) is a custom formula designed to measure the strength feat of an exercise set. </p>
-<p>
-    It takes into account context of athlete bodyweight, as well as reps carried out. This allows athletes to tangibly measure progress in strength, if the user achieves the same lift at a lower body weight. 
-    For recorded sets where the user also logged their body weight ( +/-3 days for a 7 day window of relevance), a strength index is calculated.
+    <h3> Analysing Training Data:</h3>
+    <p> 
+        The Strength Index (SI) is a custom formula designed to measure the strength feat of an exercise set. </p>
+    <p>
+        It takes into account context of athlete bodyweight, as well as reps carried out. This allows athletes to tangibly measure progress in strength, if the user achieves the same lift at a lower body weight. 
+        For recorded sets where the user also logged their body weight ( +/-3 days for a 7 day window of relevance), a strength index is calculated.
 
-<p>The formula is as follows: </p>
-<p> 
-    <i> [ Reps x weight ] / [ bodyweight(kg) x <span style="color: red;">Rep Range Factor*</span> ] </i>
-</p>
-<p>
-    <span style="color: red;"> *Rep Range factors will be utilised based on the following scaling model: </span>
-    <ul>
-        <li>1-2 reps = 3.3</li>
-        <li>3-6 reps = 1.4</li>
-        <li>7-10 reps = 1 (normal)</li>
-        <li>11-15 reps = 0.8</li>
-        <li>16-30 reps = None (don't calculate due to obvious skewing)</li>
-    </ul> 
-</p>
+    <p>The formula is as follows: </p>
+    <p> 
+        <i> [ Reps x weight ] / [ bodyweight(kg) x <span style="color: red;">Rep Range Factor*</span> ] </i>
+    </p>
+    <p>
+        <span style="color: red;"> *Rep Range factors will be utilised based on the following scaling model: </span>
+        <ul>
+            <li>1-2 reps = 3.3</li>
+            <li>3-6 reps = 1.4</li>
+            <li>7-10 reps = 1 (normal)</li>
+            <li>11-15 reps = 0.8</li>
+            <li>16-30 reps = None (don't calculate due to obvious skewing)</li>
+        </ul> 
+    </p>
+<div>
 
 <h3> Custom Training Data Analysis:</h3>
 <p>
@@ -153,7 +192,6 @@
     </ul>
 </p>
 
-<!-- <button id="allTrainingData" type="button">All Training Data</button> -->
 <button id="topWeightPRs" type="button">Heaviest Weight Sets</button>
 <button id="sIndexPRData" type="button">Highest Strength Index Sets</button>
 <div id="customTrainingTable"></div>

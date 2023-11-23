@@ -178,7 +178,7 @@ def teamDashboard():
 def checkin():
     return render_template("checkin.html") 
 
-@app.route('/athlete_dashboard', methods=["GET", "POST"])
+@app.route('/my_dashboard', methods=["GET", "POST"])
 @login_required
 def athlete():
     highest_W_table = []
@@ -207,7 +207,7 @@ def athlete():
         
         # Fetch table data to serve to user page: 
         
-    return render_template("athlete_dashboard.html",
+    return render_template("my_dashboard.html",
                             current_username = current_username,
                             x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6,
                             weight_graph_12m_points = weight_graph_12m_points,

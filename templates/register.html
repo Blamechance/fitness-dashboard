@@ -5,8 +5,21 @@
 {% endblock %}
 
 {% block main %}
+<script>
+    function highlightActiveNav() {
+        var activeNavPage = document.getElementsByName("nav-register");
+        if (activeNavPage.length > 0) {
+            activeNavPage[0].classList.add('nav-active');
+        }
+    }
+
+    window.onload = function() {
+        highlightActiveNav();
+    };
+ </script>
+
     <form action="/register" method="post">
-        <h3>Please provide a new username and password. </h3>
+        <h3>Register:</h3>
         <p style="text-align: center">Usernames are not case-sensitive, but passwords are.</p>
         <div class="mb-3">
             <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="username" name="username" placeholder="Username" type="text">

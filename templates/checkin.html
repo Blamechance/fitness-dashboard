@@ -6,19 +6,40 @@
 
 {% block main %}
 
+<!-- Nav bar highlighting for current page -->
+<script>
+    function highlightActiveNav() {
+        var activeNavPage = document.getElementsByName("nav-check-in");
+        if (activeNavPage.length > 0) {
+            activeNavPage[0].classList.add('nav-active');
+        }
+    }
+
+    window.onload = function() {
+        highlightActiveNav();
+    };
+ </script>
+
+
 <h1> Progress Check-in </h1>
-<p>Upload your fitnotes export files to check-in!</p>
+
+
+<div class="overview-text">
+    <p>Upload your fitnotes export files to check-in!</p>
+</div>
+
 
 
 <!-- use onsubmit for validation, to prevent needing an asynchronous call -->
 <form id="checkin-form" method="post" onsubmit="validateCSV()" action="/upload" enctype = "multipart/form-data">
-    <select id="userDataType" name="uploadType">
-        <option value="none" selected disabled hidden>Select an Option</option>
-        <option value="training">Training Log</option>
-        <option value="weight">Body Tracking Log</option>
-    </select>
+    <div class="select-file-container">
+        <select id="userDataType" name="uploadType">
+            <option value="none" selected disabled hidden>Select an Option</option>
+            <option value="training">Training Log</option>
+            <option value="weight">Weight Log</option>
+        </select>
+    </div>
     <input type="file" id="userFile" name="userUpload" accept="text/csv">
-    <br>
     <input type="submit" value="Upload Files!">
 </form>
 

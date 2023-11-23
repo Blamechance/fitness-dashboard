@@ -15,10 +15,34 @@ body {
     border-radius: 5px;
 }
 
+
+/* The following will only trigger when the screen size is wider than the mid-width. */
+/* i.e, everything inside is for desktop. */
+
+@media screen and (min-width: 600px) {
+    .small-content-container {
+        width: 70%;
+        margin: 0 auto;
+        padding: 20px;
+        border-radius: 5px;
+    }
+
+    .navbar-message {
+        color: #A7A88A;
+        position: absolute;
+        right: 10px;
+    }
+
+}
+
 .navbar {
     background-color: #3A6A59;
     color: #B9C8BC;
 
+}
+
+.navbar-message-mobile {
+    color: #A7A88A;
 }
 
 .navbar-brand {
@@ -30,7 +54,37 @@ body {
 
 }
 
+.nav-active {
+    text-decoration: underline;
+    color: #D6C18A;
+}
+
+.nav-welcome-msg {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.active {
+    color: #8F3B21;
+ }
+
+.overview-text{
+    padding: 20px;
+    text-align: center;
+}
+
+.navbar-brand-text {
+    color: #CCCDC7;
+    padding-left: 10px;
+}
+
+.navbar-link-text {
+    color: #CCCDC7;
+    padding-left: 20px;
+}
+
 h1 {
+    padding: 10px;
     text-align: center;
 }
 
@@ -44,30 +98,28 @@ canvas{
 
 body {background-color: white;}
 
+
 form {
+    text-align: center;
+    margin: auto;
+}
+
+.select-file-container {
     display: flex;
     justify-content: center;
-    border: 1px;
-    padding: 10px;
+    padding-top: 5px;
 }
-  
+
 select {
     padding: 4px 100px;
+    text-align: center;
 
 }
 
-button {
-    display: inline-block;
-    background-color: #A7A88A;
-    color: white;
-    padding: 2px 6px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    }
-
 input[type="submit"] {
-    background-color: #757573;
+    display: block;
+    margin: 0 auto;
+    background-color: #A7A88A;
     color: white;
     padding: 2px 15px;
     border: none;
@@ -76,15 +128,26 @@ input[type="submit"] {
 }
 
 input[type="file"] {
-    padding: 4px 20px;
-    border: none;
-    border-radius: 5px;
+    display: block;
+    margin: 0 auto;
+    padding: 5px;
     cursor: pointer;
 }
+
 
 .button-container {
     width: 100%;
     text-align: center;
+    border: none;
+    border-radius: 5px;
   }
   
-
+  button {
+    display: inline-block;
+    background-color: #A7A88A;
+    color: white;
+    padding: 2px 6px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    }
