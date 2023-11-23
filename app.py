@@ -165,12 +165,19 @@ def logout():
 @app.route('/', methods=["GET", "POST"])
 @login_required
 def index():
-    return render_template("index.html") 
+    current_username = str(session["user_id"]).capitalize()
+
+    return render_template("index.html", current_username = current_username)
 
 @app.route('/team-dashboard', methods=["GET", "POST"])
 @login_required
 def teamDashboard():
     return render_template("team-dashboard.html") 
+
+@app.route('/faq', methods=["GET", "POST"])
+@login_required
+def faq():
+    return render_template("faq.html") 
 
 
 @app.route('/checkin', methods=["GET", "POST"])
@@ -178,9 +185,9 @@ def teamDashboard():
 def checkin():
     return render_template("checkin.html") 
 
-@app.route('/my_dashboard', methods=["GET", "POST"])
+@app.route('/my-dashboard', methods=["GET", "POST"])
 @login_required
-def athlete():
+def my_dashboard():
     highest_W_table = []
     all_training_table = []
     SI_PR_table = []
@@ -193,7 +200,7 @@ def athlete():
     x_axis_6 = fetch6mXAxis()    
      
     if request.method == "POST": # POST method indicates user was redirected to function by another. 
-        return render_template("athlete.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
+        return render_template("my_dashboard.html", x_axis_12 = x_axis_12, x_axis_3 = x_axis_3, x_axis_6 = x_axis_6) 
 
     target_json_weight_file = select_latest_JSON("weight", session["user_id"]) # find the weight archive to load, for this user 
     

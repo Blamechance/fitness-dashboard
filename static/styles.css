@@ -1,10 +1,11 @@
 body {
     background-color: #B9C8BC;
+    padding-bottom: 20px;
 }
 
 .main-content-container {
-    margin-left: 10%;
-    margin-right: 10%; 
+    margin-left: 2%;
+    margin-right: 2%; 
 
 }
 
@@ -15,25 +16,21 @@ body {
     border-radius: 5px;
 }
 
-
-/* The following will only trigger when the screen size is wider than the mid-width. */
-/* i.e, everything inside is for desktop. */
-
-@media screen and (min-width: 600px) {
-    .small-content-container {
-        width: 70%;
-        margin: 0 auto;
-        padding: 20px;
-        border-radius: 5px;
-    }
-
-    .navbar-message {
-        color: #A7A88A;
-        position: absolute;
-        right: 10px;
-    }
+.small-content-container {
+    width: 90%;
+    margin: 0 auto;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
 
 }
+
+.table-container {
+    margin: 0 auto;
+    border:none;
+    padding: 5px;
+}
+
 
 .navbar {
     background-color: #3A6A59;
@@ -41,17 +38,30 @@ body {
 
 }
 
-.navbar-message-mobile {
-    color: #A7A88A;
+.navbar-message {
+    color: #CDA292;
+    position: relative;
+    right: auto;
+    padding-right: 20px;
+    left: 0;
 }
 
 .navbar-brand {
-    color: #B9C8BC;
+    color: #CDA292;
 }
 
 .nav-link {
     color: #B9C8BC;
 
+}
+
+.navbar-toggler {
+    order: 1;
+  }
+  
+
+.nav-link-logout {
+    text-decoration: underline;
 }
 
 .nav-active {
@@ -88,8 +98,20 @@ h1 {
     text-align: center;
 }
 
-h3 {
+h2 {
     text-align: center;
+    border: black;
+}
+
+h3 {
+    color: #8F3B21;
+    text-align: center;
+    padding: 10px;
+}
+
+p {
+    font-size: 16px;
+    text-align: left;
 }
 
 canvas{
@@ -128,6 +150,7 @@ input[type="submit"] {
 }
 
 input[type="file"] {
+    max-width: 100%;
     display: block;
     margin: 0 auto;
     padding: 5px;
@@ -146,8 +169,56 @@ input[type="file"] {
     display: inline-block;
     background-color: #A7A88A;
     color: white;
-    padding: 2px 6px;
+    padding: px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
     }
+
+table, th, td {
+    margin: 0 auto;
+    text-align: center;
+    border: 1px solid black;
+    }
+
+li {
+font-size: 14px;
+text-align: left;
+}
+
+
+/* The following will only trigger when the screen size is wider than the mid-width. */
+/* i.e, everything inside is for desktop. */
+@media screen and (min-width: 600px) {
+    .small-content-container {
+        width: 70%;
+        margin: 0 auto;
+        padding: 20px;
+        border-radius: 5px;
+        text-align: center;
+    }
+    .navbar-brand {
+        color: #CCCDC7;
+    }
+
+    .navbar-message  {
+        color: #CDA292;
+        right: auto;
+        left: 0;
+    }
+
+    .graph-container {
+        margin: 0 auto;
+        max-width: 50%; 
+    }
+    .main-content-container {
+        margin-left: 10%;
+        margin-right: 10%; 
+    
+    }
+
+    .table-container {
+        margin: 0 auto;
+    }
+
+}

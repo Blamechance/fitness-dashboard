@@ -16,13 +16,19 @@
     };
  </script>
 
-<h1> Welcome back, {{ current_username }}! </h1>
-
 <div class="med-content-container">
-    <h3> Weight Tracking:</h3>
+    <h1> {{ session["user_id"] | capitalize() }}'s Dashboard:</h1>
 </div>
 
-<canvas id="weightGraph" style="min-height: 50%; max-width: 60%;"></canvas>
+<div class="small-content-container">
+    <h3>Weight At Last Check-in: </h3>
+    <p style="color: black; text-align: center;"> {{ current_weight | safe }} kgs (7 day average)</p>
+</div>
+
+
+<div class="graph-container">
+    <canvas id="weightGraph"></canvas>
+</div>
 
 
 <!-- Weight Graph Scripts -->
@@ -41,6 +47,7 @@
 
     const weightChartOptions = {
         //Add further options in future: 
+        responsive: true
     };
 
     //Setting default render of weight graph to 12 months
@@ -56,7 +63,7 @@
 
 
 <div class="button-container">
-    <h6> Click to change shown period:</h6>
+    <h6 style="color:gray; padding-top:5px" > Click to change shown period:</h6>
 
     <button id="3m-button" type="button" class="graph-button active" >3 Months</button>
     <button id="6m-button" type="button" class="graph-button">6 Months</button>
@@ -80,16 +87,6 @@
    });
 }
 </script>
-
-
-<br>
-
-<div class="small-content-container">
-    <h3> Athlete Last Recorded Average Weight : </h3>
-    <h6> (7 Day average) </h6>
-    <h5> {{ current_weight | safe }} kgs </h5>
-</div>
-
 
 
 <!-- All data served from backend is kept as python data structures -- thus they are served by escaping chars with tojson first,-->
@@ -120,8 +117,7 @@
     Button12m.addEventListener("click", function() {
         weightGraph.data = {
             labels: JSON.parse('{{ x_axis_12 | tojson }}'),
-            datasets: [{
-                label: "Weight (kg)", 
+            datasets: [{                label: "Weight (kg)", 
                 data: JSON.parse('{{ weight_graph_12m_points | tojson }}'),
                 borderColor: 'rgb(143, 59, 33)',
                 tension: 0.1,
@@ -150,31 +146,6 @@
     });
 </script>
 
-<div class="small-content-container">
-
-    <h3> Analysing Training Data:</h3>
-    <p> 
-        The Strength Index (SI) is a custom formula designed to measure the strength feat of an exercise set. </p>
-    <p>
-        It takes into account context of athlete bodyweight, as well as reps carried out. This allows athletes to tangibly measure progress in strength, if the user achieves the same lift at a lower body weight. 
-        For recorded sets where the user also logged their body weight ( +/-3 days for a 7 day window of relevance), a strength index is calculated.
-
-    <p>The formula is as follows: </p>
-    <p> 
-        <i> [ Reps x weight ] / [ bodyweight(kg) x <span style="color: red;">Rep Range Factor*</span> ] </i>
-    </p>
-    <p>
-        <span style="color: red;"> *Rep Range factors will be utilised based on the following scaling model: </span>
-        <ul>
-            <li>1-2 reps = 3.3</li>
-            <li>3-6 reps = 1.4</li>
-            <li>7-10 reps = 1 (normal)</li>
-            <li>11-15 reps = 0.8</li>
-            <li>16-30 reps = None (don't calculate due to obvious skewing)</li>
-        </ul> 
-    </p>
-<div>
-
 <h3> Custom Training Data Analysis:</h3>
 <p>
     This table shows two different types of PR's: 
@@ -194,7 +165,7 @@
 
 <button id="topWeightPRs" type="button">Heaviest Weight Sets</button>
 <button id="sIndexPRData" type="button">Highest Strength Index Sets</button>
-<div id="customTrainingTable"></div>
+<div id="customTrainingTable" class="table-container"></div>
 
 <h3> All Training Data:</h3>
 <p>

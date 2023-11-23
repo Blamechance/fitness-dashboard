@@ -1,0 +1,123 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    FAQ
+{% endblock %}
+
+{% block main %}
+<script>
+    function highlightActiveNav() {
+        var activeNavPage = document.getElementsByName("nav-faq");
+        if (activeNavPage.length > 0) {
+            activeNavPage[0].classList.add('nav-active');
+        }
+    }
+
+    window.onload = function() {
+        highlightActiveNav();
+    };
+ </script>
+
+<div class="small-content-container">
+    <div>
+        <h1>
+            TL;DR:
+        </h1>
+        <p>
+            <ul>
+                <li> The higher the Strength Index (SI) score, the better. </li>
+                <li>SI is best used as an indicator of:
+                    <ul>
+                        <li> progress in the same exercise, at different body weight.</li>
+                        <li> If your SI for a high rep set is catching up to your 1-3 rep PR's SI, you're probably due to test a new PR!</li>
+    
+                    </ul>
+                </li>
+                <li> BW entries on charts are averages between dates. </li>
+                <li> However, BW shown in the exercise log database table, is only appended if precise to the same date. Otherwise, it is left as N/A.</li>
+
+
+            </ul> 
+        </p>
+    <div>
+
+    <h1> How to use this tool: </h1>
+    <h3> In the FitNotes app:</h3>
+    <p> Open the app and click on the 3 dots on the top-right and click "Settings". Then: </p>
+    <ol type="1">
+        <li>Make sure at the very top, the Unit system is set to "Metric". </li>
+        <li>Scroll down half-way until you see the <span style="color: red"> "Spreadsheet Export" </span> option.</li>
+        <li>In the pop-up menu, uncheck "Include Timestamp in file name". Support for Comment data is provided, so feel free to leave that checked. </li>
+        <li>Click on "Save export" to save to your device.</li>
+        <li>Repeat, but this time after clicking "spreadsheet Export", check "Body Tracker Data" to export weight data.</li>
+    </ol> 
+
+    <h3> In Fitness Dashboard Website: </h3>
+    <p> Navigate to the "Monthly Check-in" page and upload your respective files! </p>
+
+    <p> 
+        The Strength Index (SI) is a custom formula designed to measure the strength feat of an exercise set. 
+    </p>
+        
+    <h1> How is the data processed?</h1>
+
+    <h3> Analysing Training Data:</h3>
+    <p> 
+        The Strength Index (SI) is a custom formula designed to measure the strength feat of an exercise set. </p>
+    <p>
+        By including exercise weight, rep range and athlete bodyweight, SI allows athletes to tangibly measure progress in strength, regardless of fluctuating context. 
+    </p>
+    <p> 
+        A strength index is calculated for recorded sets where weight data is available*.
+    </p>
+    <p style="color:grey;">
+        * This weight value is the average of all available weight data, within a 7 day proximity window (3 days on either side + the date). 
+    </p>
+
+    <h6>Strength Index Formula:</h6>
+    <p> 
+        <i> [ Reps x weight ] / [ bodyweight(kg) x <span style="color: red;">RR Factor*</span> ] </i>
+    </p>
+    <p>
+        <span style="color: red;"> *Rep Range (RR) factors will be utilised based on the following scaling model: </span>
+        <table border="1">
+            <tr>
+                <th>Reps Range</th>
+                <th>Scaling Factor</th>
+            </tr>
+            <tr>
+                <td>1-2 reps</td>
+                <td>3.3</td>
+            </tr>
+            <tr>
+                <td>3-6 reps</td>
+                <td>1.4</td>
+            </tr>
+            <tr>
+                <td>7-10 reps</td>
+                <td>1 (normal)</td>
+            </tr>
+            <tr>
+                <td>11-15 reps</td>
+                <td>0.8</td>
+            </tr>
+            <tr>
+                <td>16+ reps</td>
+                <td>None (don't calculate due to obvious skewing)</td>
+            </tr>
+        </table>
+    </p>    
+<div>
+
+
+
+<h3> Analysing Weight Data:</h3>
+
+<p> Weight chart values are averages of all entries between each other. </p>
+<p> Both fitnotes files are cross-referenced to provide the weight data of that date, next to any related exercises in the Training Data table. </p>
+<p> Only metric system (kg) is supported.</p>
+
+    
+
+
+{% endblock %}
