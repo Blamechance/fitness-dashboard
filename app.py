@@ -196,6 +196,8 @@ def my_dashboard():
     highest_W_table = []
     all_training_table = []
     SI_PR_table = []
+    weight_graph_12m_points, weight_graph_6m_points, weight_graph_3m_points= [[],[],[]]
+    highest_W_table, all_training_table, SI_PR_table - [[],[],[]]
     
     current_username = str(session["user_id"]).capitalize()
 
@@ -210,11 +212,12 @@ def my_dashboard():
     target_json_weight_file = select_latest_JSON("weight", session["user_id"]) # find the weight archive to load, for this user 
     
     # process most current JSON archive file with axis list to find average points to graph. 
-    weight_graph_12m_points = json_string_to_weight_plots(x_axis_12, target_json_weight_file)
-    weight_graph_6m_points = json_string_to_weight_plots(x_axis_6, target_json_weight_file)
-    weight_graph_3m_points = json_string_to_weight_plots(x_axis_3, target_json_weight_file)
-    current_weight = weight_graph_3m_points[-1]
-    highest_W_table, all_training_table, SI_PR_table  = fetch_training_table_data(session["user_id"])
+    if target_json_weight_file: 
+        weight_graph_12m_points = json_string_to_weight_plots(x_axis_12, target_json_weight_file)
+        weight_graph_6m_points = json_string_to_weight_plots(x_axis_6, target_json_weight_file)
+        weight_graph_3m_points = json_string_to_weight_plots(x_axis_3, target_json_weight_file)
+        current_weight = weight_graph_3m_points[-1]
+        highest_W_table, all_training_table, SI_PR_table  = fetch_training_table_data(session["user_id"])
         
         
         # Fetch table data to serve to user page: 

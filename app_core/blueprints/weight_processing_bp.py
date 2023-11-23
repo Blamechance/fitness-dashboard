@@ -71,6 +71,8 @@ def json_string_to_weight_plots(axis, filename):
     datetime_format = "%Y-%m-%d"
     axis_format = "%d %b, %Y" 
     file_location = os.path.join(processed_w_data_folder, filename)  
+
+    if
     
     with open(file_location) as reader:
         # Load the JSON string file into variable as a python dict
@@ -98,7 +100,7 @@ def json_string_to_weight_plots(axis, filename):
         previous_list = [] # holder for previous valid data, to swap for any zero lists.
 
         if not any(input_weight_data.values()): # no matching data points at all, return empty list.
-            print(f"No relevant data found in file for graph!") 
+            print("No relevant data found in file for graph!") 
             return [0] * len(axis)
 
         for values in input_weight_data.values(): # take at least one data point to fill zero list replacement variable. 
