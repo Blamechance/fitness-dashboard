@@ -39,7 +39,7 @@ body {
 }
 
 .navbar-message {
-    color: #CDA292;
+    color: white;
     position: relative;
     right: auto;
     padding-right: 20px;
@@ -187,7 +187,7 @@ table, th, td {
         }
 
 
-/* The following will only trigger when the screen size is wider than the mid-width. */
+/* The following will only trigger when the screen size is wider than the min-width. */
 /* i.e, everything inside is for desktop. */
 @media screen and (min-width: 600px) {
     .small-content-container {
@@ -202,7 +202,7 @@ table, th, td {
     }
 
     .navbar-message  {
-        color: #CDA292;
+        color: white;
         right: auto;
         left: 0;
     }
@@ -227,8 +227,15 @@ table, th, td {
         text-align: left;
         }
 
-        p {
-            font-size: 16px;
-            text-align: left;
-        }
+    p {
+        font-size: 16px;
+        text-align: left;
+    }
+
+    .overview-text {
+        max-width: 30%;
+        display: block;
+        margin: auto;
+        padding-top: 5px;
+    }
 }

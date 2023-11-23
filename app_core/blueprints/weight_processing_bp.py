@@ -7,8 +7,8 @@ from helpers import select_latest_csv
 from flask import session, Blueprint
 
 
-weight_submissions_folder = 'app_core/all_user_data/weight_data_submissions'
-processed_w_data_folder = 'app_core/all_user_data/w_log_archive'
+WEIGHT_SUBMISSION_FOLDER = 'app_core/all_user_data/weight_data_submissions'
+PROCESSED_W_DATA_FOLDER = 'app_core/all_user_data/w_log_archive'
 
 
 
@@ -24,7 +24,7 @@ def process_weight_log(username):
         - These JSON files will be backed up on the file system to operate as a "snapshot" in the archive folder. 
     """
     filename = select_latest_csv("WEIGHT_LOG_FOLDER", username)
-    df = pd.read_csv(weight_submissions_folder+filename)
+    df = pd.read_csv(WEIGHT_SUBMISSION_FOLDER+filename)
     drop_columns = ["Time", "Measurement", "Unit", "Comment"]
 
     # use pandas to extract log entry dates and weights, but only if it's bodyweight data
@@ -45,7 +45,7 @@ def process_weight_log(username):
     latest_entry_date = log_entry_dates[len(log_entry_dates)-1]
 
     output_filename = f"WeightLog_{session['user_id']}_{latest_entry_date}"
-    output_filepath = os.path.join(processed_w_data_folder, output_filename)
+    output_filepath = os.path.join(PROCESSED_W_DATA_FOLDER, output_filename)
 
     with open(output_filepath, 'w', encoding="utf-8") as final_json_output:
         final_json_output.write(parsed_entries_string)

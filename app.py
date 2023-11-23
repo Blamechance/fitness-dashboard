@@ -193,11 +193,9 @@ def checkin():
 @app.route('/my-dashboard', methods=["GET", "POST"])
 @login_required
 def my_dashboard():
-    highest_W_table = []
-    all_training_table = []
-    SI_PR_table = []
+    highest_W_table, all_training_table, SI_PR_table = [[],[],[]]
     weight_graph_12m_points, weight_graph_6m_points, weight_graph_3m_points= [[],[],[]]
-    highest_W_table, all_training_table, SI_PR_table - [[],[],[]]
+    current_weight = "No Weight Data Found!"
     
     current_username = str(session["user_id"]).capitalize()
 
@@ -216,11 +214,9 @@ def my_dashboard():
         weight_graph_12m_points = json_string_to_weight_plots(x_axis_12, target_json_weight_file)
         weight_graph_6m_points = json_string_to_weight_plots(x_axis_6, target_json_weight_file)
         weight_graph_3m_points = json_string_to_weight_plots(x_axis_3, target_json_weight_file)
-        current_weight = weight_graph_3m_points[-1]
+        current_weight = f"{weight_graph_3m_points[-1]} kgs (7 day average)"
         highest_W_table, all_training_table, SI_PR_table  = fetch_training_table_data(session["user_id"])
-        
-        
-        # Fetch table data to serve to user page: 
+      
         
     return render_template("my_dashboard.html",
                             current_username = current_username,

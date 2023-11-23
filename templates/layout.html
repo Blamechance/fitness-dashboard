@@ -83,7 +83,7 @@
 
             {% if session["user_id"] %} 
             <span class="navbar-text navbar-message navbar-message-mobile"> 
-              User: {{ session["user_id"] | capitalize() }}
+              {{ session["user_id"] | capitalize() }}
             </span>
           {% endif %}
           </nav>

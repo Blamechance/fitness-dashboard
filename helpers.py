@@ -89,11 +89,15 @@ def select_latest_JSON(data_type, username):
         return "Folder Empty"
 
     for item in os.listdir(log_dir): 
-        sliced_filename = item[item.index("202"):] #index between year and csv (inclusive of year but not csv)
-        date_list.append(sliced_filename)
+        file = item.split("_")
+        if file[1] == username:
+            sliced_filename = item[item.index("202"):] #index between year and csv (inclusive of year but not csv)
+            date_list.append(sliced_filename)
     
-    filename = f"{file_prefix}{username}_{str(max(date_list))}"
-    return filename
+    if date_list:
+        filename = f"{file_prefix}{username}_{str(max(date_list))}"
+        return filename
+    return False
 
 def fetch_days_in_month(input_month):
     MONTHS_WITH_31_DAYS = [1, 3, 5, 7, 8, 10, 12]  # January, March, May, July, August, October, December
