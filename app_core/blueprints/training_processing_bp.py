@@ -37,6 +37,11 @@ def process_training_log(username):
             return round(SI_output,2)
         return 0
     
+    # Following are the output lists to return: 
+    heaviest_weight_prs = []
+    strength_index_prs = []
+    all_training_data = []
+
     # if either of these are false, meaning no file found, return only training data without weight context
     latest_training_csv = select_latest_csv("TRAINING_LOG_FOLDER", username)
     latest_weight_json = select_latest_JSON("weight", username) 
@@ -66,11 +71,6 @@ def process_training_log(username):
     # 3. If no matches at all, set BW + Strength Index to 00. 
     
     for index, row in df.iterrows():
-        # Following are the output lists to return: 
-        heaviest_weight_prs = []
-        strength_index_prs = []
-        all_training_data = []
-
         # date as string
         lift_date = datetime.strftime(datetime.strptime(row["Date"], df_format_archive), df_format_archive)
         
