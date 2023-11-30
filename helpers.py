@@ -46,9 +46,7 @@ def select_latest_csv(data_type, username):
     file_suffix = ".csv"
     date_list = {} 
 
-
-
-    #Check for most recent file, in weight log folder. Use that most recent folder to create JSON string archive file:
+    #Check for most recent file, in weight log folder, for that user. Use that most recent folder to create JSON string archive file:
     # 1. Slice date sections of all filenames in directory. 
     # 2. Convert to datetime compatible for comparison with max()
     # Once max file found, save it's name. 
@@ -56,10 +54,13 @@ def select_latest_csv(data_type, username):
     #NOTE: Wrap in a try-except so the except can delete temp file on error.
 
     for item in os.listdir(log_dir): 
-        sliced_filename = item[item.index("202"):item.index(".csv")] #index between year and csv (inclusive of year but not csv)
-        unformatted_date = datetime.strptime(sliced_filename, input_format)
-        iso_date = unformatted_date.strftime(output_iso_format)
-        date_list[sliced_filename] = iso_date
+
+        # split by underscore, check first element is username: 
+        if item.split("_")[0] == username:
+            sliced_filename = item[item.index("202"):item.index(".csv")] #index between year and csv (inclusive of year but not csv)
+            unformatted_date = datetime.strptime(sliced_filename, input_format)
+            iso_date = unformatted_date.strftime(output_iso_format)
+            date_list[sliced_filename] = iso_date
 
 
     latest_fitnotes_file = str(max(date_list)) # use value (date in iso) for max, but pass in the key (date in file's format) to variable

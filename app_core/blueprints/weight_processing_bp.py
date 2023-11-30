@@ -70,7 +70,7 @@ def json_string_to_weight_plots(axis, filename):
     """
     datetime_format = "%Y-%m-%d"
     axis_format = "%d %b, %Y" 
-    file_location = os.path.join(processed_w_data_folder, filename)  
+    file_location = os.path.join(PROCESSED_W_DATA_FOLDER, filename)  
     
     with open(file_location) as reader:
         # Load the JSON string file into variable as a python dict

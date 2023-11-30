@@ -37,9 +37,14 @@ def process_training_log(username):
             return round(SI_output,2)
         return 0
     
+    # if either of these are false, meaning no file found, return only training data without weight context
     latest_training_csv = select_latest_csv("TRAINING_LOG_FOLDER", username)
     latest_weight_json = select_latest_JSON("weight", username) 
-    latest_weight_archive_location = os.path.join(processed_w_data_folder, latest_weight_json)
+
+    if latest_weight_json:
+        latest_weight_archive_location = os.path.join(processed_w_data_folder, latest_weight_json)
+
+
     df_format_archive = "%Y-%m-%d"
     drop_columns = ["Distance", "Distance Unit", "Time"]
     
@@ -61,7 +66,13 @@ def process_training_log(username):
     # 3. If no matches at all, set BW + Strength Index to 00. 
     
     for index, row in df.iterrows():
-        lift_date = datetime.strftime(datetime.strptime(row["Date"], df_format_archive), df_format_archive) # date as string
+        # Following are the output lists to return: 
+        heaviest_weight_prs = []
+        strength_index_prs = []
+        all_training_data = []
+
+        # date as string
+        lift_date = datetime.strftime(datetime.strptime(row["Date"], df_format_archive), df_format_archive)
         
         # Define the 7 day window as a list of dates:
         lower_date = datetime.strptime(lift_date, df_format_archive) - timedelta(days=3)
@@ -72,28 +83,23 @@ def process_training_log(username):
         heaviest_weight_helper_dict = {} # list containing dicts of exercises that are the top PR's 
         SI_PR_helper_dict = {}
     
-
-        # Following are the output lists to return: 
-        heaviest_weight_prs = []
-        strength_index_prs = []
-        all_training_data = []
-
         for i in range(7):
             search_dates.append((lower_date + timedelta(days=i)).strftime(df_format_archive))
 
         # Parse through the JSON archive file to check if there are any weight check-ins matching any of the dates. 
         # if so, average all matching dates and return -- otherwise, return None: 
-        with open(latest_weight_archive_location) as reader:
-            # Load the JSON string file into variable as a python dict
-            WLog_entries_dict = json.loads(reader.read()) 
-            for pair in WLog_entries_dict["data"]:
-                if pair[0] == lift_date:
-                    matching_weight.append(pair[1]) # otherwise, append close dates to list
-                    df.at[index, 'Bodyweight'] = pair[1] # if precise weight record found, return just that
-                    continue
-                
-                if pair[0] in search_dates:
-                    matching_weight.append(pair[1]) # otherwise, append close dates to list
+        if latest_weight_json:
+            with open(latest_weight_archive_location) as reader:
+                # Load the JSON string file into variable as a python dict
+                WLog_entries_dict = json.loads(reader.read()) 
+                for pair in WLog_entries_dict["data"]:
+                    if pair[0] == lift_date:
+                        matching_weight.append(pair[1]) # otherwise, append close dates to list
+                        df.at[index, 'Bodyweight'] = pair[1] # if precise weight record found, return just that
+                        continue
+                    
+                    if pair[0] in search_dates:
+                        matching_weight.append(pair[1]) # otherwise, append close dates to list
                     
         # If not weight data, skip appending BW + SI: 
         if not matching_weight:    
