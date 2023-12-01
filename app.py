@@ -215,7 +215,7 @@ def my_dashboard():
         weight_graph_6m_points = json_string_to_weight_plots(x_axis_6, target_json_weight_file)
         weight_graph_3m_points = json_string_to_weight_plots(x_axis_3, target_json_weight_file)
         current_weight = f"{weight_graph_3m_points[-1]} kgs (7 day average)"
-        highest_W_table, all_training_table, SI_PR_table  = fetch_training_table_data(session["user_id"])
+    highest_W_table, all_training_table, SI_PR_table  = fetch_training_table_data(session["user_id"])
       
         
     return render_template("my_dashboard.html",
@@ -265,21 +265,8 @@ def upload_file():
             os.remove((os.path.join(app.config['TRAINING_SUBMISSION_FOLDER'], file_name)))
             return "File format error. Please export your file and try again. ", 400
         
-        # Process the submitted training CSV to receive 3 lists of data: 
-        heaviest_prs_data, SI_PR_data, all_training_data = process_training_log(session['user_id'])
-        
-        # Save the data as JSON, in training_tables folder: 
-        heaviest_pr_filename = f"HeaviestPRs_{session['user_id']}_{DATETIME_NOW}"
-        SI_PR_filename = f"SI_PRs_{session['user_id']}_{DATETIME_NOW}"
-        all_training_data_filename = f"All_Training_Data_{session['user_id']}_{DATETIME_NOW}"
-
-        filename_list = {heaviest_pr_filename:heaviest_prs_data, SI_PR_filename : SI_PR_data, all_training_data_filename: all_training_data}
-
-        for filename, data_list in filename_list.items(): 
-            output_filepath = os.path.join(app.config['PROCESSED_TRAINING_DATA'], filename)
-
-            with open(output_filepath, 'w', encoding="utf-8") as output:
-                output.write(json.dumps(data_list))
+        # Process the submitted training CSV and write files.
+        process_training_log(session['user_id'])
 
         return "Server file upload Success."        
     
@@ -305,6 +292,11 @@ def upload_file():
             return "File format error. Please export your file and try again. ", 400
         
         process_weight_log(session['user_id'])
+
+        # Check if most recent SI file is empty - if so, create a new one. 
+        if not select_latest_JSON("SI-PRs", session["user_id"]):
+            process_training_log(session["user_id"])
+
         return "Server file upload Success."
 
     return "Upload Error Occurred. Please contact Admin.", 400

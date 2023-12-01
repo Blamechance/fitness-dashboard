@@ -2,6 +2,8 @@ from functools import wraps
 from flask import redirect,redirect, session
 import os
 from datetime import datetime, date
+import json
+
 
 CURRENT_TIME_DATE = datetime.now()
 current_month = int(CURRENT_TIME_DATE.strftime("%m")) # %m prints month as digit
@@ -74,28 +76,38 @@ def select_latest_JSON(data_type, username):
         log_dir = processed_w_data_folder
         file_prefix = "WeightLog_" 
 
-    elif data_type == "HeaviestPRs":
+    elif data_type == "Heaviest-PRs":
         log_dir = processed_t_data_folder
-        file_prefix = f"HeaviestPRs_" 
+        file_prefix = f"Heaviest-PRs_" 
 
-    elif data_type == "All_Training_Data":
+    elif data_type == "All-Training-Data":
         log_dir = processed_t_data_folder
-        file_prefix = f"All_Training_Data_"
+        file_prefix = f"All-Training-Data_"
 
-    elif data_type == "SI_PRs":
+    elif data_type == "SI-PRs":
         log_dir = processed_t_data_folder
-        file_prefix = f"SI_PRs_" 
+        file_prefix = f"SI-PRs_" 
 
     if not log_dir:
         return "Folder Empty"
 
+    # Check each item in dir to see if belongs to user and not empty
     for item in os.listdir(log_dir): 
         file = item.split("_")
         if file[1] == username:
             sliced_filename = item[item.index("202"):] #index between year and csv (inclusive of year but not csv)
-            date_list.append(sliced_filename)
+            # use sliced filename to load and check if empty file:
+            file_loc = os.path.join(log_dir, item)
+            
+            with open(file_loc) as reader:
+                # Load the JSON string file into variable as a python dict
+                file_empty_check = json.loads(reader.read())
+                
+                if file_empty_check:
+                    date_list.append(sliced_filename)
     
-    if date_list:
+    # Return user's most recent requested file. 
+    if date_list: 
         filename = f"{file_prefix}{username}_{str(max(date_list))}"
         return filename
     return False
@@ -280,12 +292,6 @@ def fetch3mXAxis():
 
     prev_3_months.reverse()
     return prev_3_months
-
-
-
-
-
-
 
 def validate_CSV(file_name, type):
     #Define appropriate CSV headers + byte length for validate function: 

@@ -1,10 +1,13 @@
-import pandas as pd
+from datetime import datetime
 import json
 import os
-from datetime import date, datetime, timedelta
+import pandas as pd
 
-from helpers import select_latest_csv
+
 from flask import session, Blueprint
+from helpers import select_latest_csv, select_latest_JSON
+from app_core.blueprints.training_processing_bp import process_training_log
+
 
 
 WEIGHT_SUBMISSION_FOLDER = 'app_core/all_user_data/weight_data_submissions'
@@ -49,7 +52,8 @@ def process_weight_log(username):
 
     with open(output_filepath, 'w', encoding="utf-8") as final_json_output:
         final_json_output.write(parsed_entries_string)
-    return "Entered process_csv."
+
+    return True
 
 
 def json_string_to_weight_plots(axis, filename):

@@ -4,6 +4,14 @@ from helpers import select_latest_csv, select_latest_JSON
 from datetime import date, datetime, timedelta
 import json
 
+CURRENT_TIME_DATE = datetime.now()
+current_month = int(CURRENT_TIME_DATE.strftime("%m")) # %m prints month as digit
+current_year = int(CURRENT_TIME_DATE.strftime("%Y")) #e.g 2013, 2019 etc.
+current_day = int(CURRENT_TIME_DATE.strftime("%-d")) #e.g 1, 17, 31 etc. 
+last_year = int(current_year) - 1
+
+DATETIME_NOW = date(current_year, current_month, current_day) 
+
 training_submissions_folder = "app_core/all_user_data/training_data_submissions"
 weight_submissions_folder = "app_core/all_user_data/weight_data_submissions"
 processed_w_data_folder = "app_core/all_user_data/w_log_archive"
@@ -101,8 +109,8 @@ def process_training_log(username):
                     if pair[0] in search_dates:
                         matching_weight.append(pair[1]) # otherwise, append close dates to list
                     
-        # If not weight data, skip appending BW + SI: 
-        if not matching_weight:    
+        # If no weight data, skip appending BW + SI: 
+        if not matching_weight:  
             df.at[index, 'Bodyweight'] = 0
             df.at[index, 'Strength Index'] = 0
             continue
@@ -154,28 +162,39 @@ def process_training_log(username):
     [strength_index_prs.append(value) for value in SI_PR_helper_dict.values()]
     all_training_data = df.to_dict('records') # 3. All lifts, unsorted.  
 
-    # Save each to /training_tabulator_data
+    # Save the data as JSON, in training_tables folder: 
+    heaviest_pr_filename = f"Heaviest-PRs_{username}_{DATETIME_NOW}"
+    SI_PR_filename = f"SI-PRs_{username}_{DATETIME_NOW}"
+    all_training_data_filename = f"All-Training-Data_{username}_{DATETIME_NOW}"
+
+    filename_list = {heaviest_pr_filename:heaviest_weight_prs, SI_PR_filename : strength_index_prs, all_training_data_filename: all_training_data}
+
+    for filename, data_list in filename_list.items(): 
+        output_filepath = os.path.join(processed_t_data_folder, filename)
+
+        with open(output_filepath, 'w', encoding="utf-8") as output:
+            output.write(json.dumps(data_list))
     
-    return heaviest_weight_prs, strength_index_prs, all_training_data
+    return True
     
 
 def fetch_training_table_data(username): 
     """
-        Fetchs the training table data and returns it as a JSON object. 
+        Fetchs the latest instances of training table data and returns it as a JSON object. 
     """
     # empty initialisation in case no data: 
     heaviest_PR_file = []
     all_training_file = []
     SI_PR_file = []
 
-    if not select_latest_JSON("HeaviestPRs", username) == "Folder Empty":
-        heaviest_PR_file = select_latest_JSON("HeaviestPRs", username) 
+    if not select_latest_JSON("Heaviest-PRs", username) == "Folder Empty":
+        heaviest_PR_file = select_latest_JSON("Heaviest-PRs", username) 
     
-    if not select_latest_JSON("All_Training_Data", username) == "Folder Empty":
-        all_training_file = select_latest_JSON("All_Training_Data", username) 
+    if not select_latest_JSON("All-Training-Data", username) == "Folder Empty":
+        all_training_file = select_latest_JSON("All-Training-Data", username) 
 
-    if not select_latest_JSON("SI_PRs", username) == "Folder Empty":
-        SI_PR_file = select_latest_JSON("SI_PRs", username)
+    if not select_latest_JSON("SI-PRs", username) == "Folder Empty":
+        SI_PR_file = select_latest_JSON("SI-PRs", username)
 
     file_list = [heaviest_PR_file, all_training_file, SI_PR_file]
     output_lists = []
