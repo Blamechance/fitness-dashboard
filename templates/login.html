@@ -17,12 +17,14 @@
         </div>
         <button class="btn btn-primary" type="submit">Log In</button>
 
+        <div class="small-content-container">
         {% if error %}
             <p class="error-message">{{ error }}</p>
         {% endif %}
+        </div>
 
         {% if success %}
-        <p class="success-message">{{ success }}</p>
+            <p class="success-message">{{ success }}</p>
         {% endif %}
     </form>
 {% endblock %}

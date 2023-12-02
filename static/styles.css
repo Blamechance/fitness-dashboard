@@ -186,6 +186,15 @@ table, th, td {
         text-align: left;
         }
 
+.error-message {
+    text-align: center;
+    color: red;
+}
+
+.success-message {
+    text-align: center;
+    color: green;
+}
 
 /* The following will only trigger when the screen size is wider than the min-width. */
 /* i.e, everything inside is for desktop. */
