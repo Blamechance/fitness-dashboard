@@ -293,8 +293,8 @@ def upload_file():
         
         process_weight_log(session['user_id'])
 
-        # Check if most recent SI file is empty - if so, create a new one. 
-        if not select_latest_JSON("SI-PRs", session["user_id"]):
+        # Check if most recent SI file is empty, in spite of training files existing, create a new SI file. 
+        if not select_latest_JSON("SI-PRs", session["user_id"]) and select_latest_csv("TRAINING_LOG_FOLDER", session["user_id"]) :
             process_training_log(session["user_id"])
 
         return "Server file upload Success."

@@ -47,6 +47,7 @@ def select_latest_csv(data_type, username):
     output_iso_format = "%Y-%m-%dT%H:%M:%S"
     file_suffix = ".csv"
     date_list = {} 
+    latest_fitnotes_file = str()
 
     #Check for most recent file, in weight log folder, for that user. Use that most recent folder to create JSON string archive file:
     # 1. Slice date sections of all filenames in directory. 
@@ -64,6 +65,8 @@ def select_latest_csv(data_type, username):
             iso_date = unformatted_date.strftime(output_iso_format)
             date_list[sliced_filename] = iso_date
 
+    if not date_list:
+        return False
 
     latest_fitnotes_file = str(max(date_list)) # use value (date in iso) for max, but pass in the key (date in file's format) to variable
     filename = f"{file_prefix}{latest_fitnotes_file}{file_suffix}"
