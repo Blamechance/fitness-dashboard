@@ -225,6 +225,7 @@ def fetch6mXAxis():
 
             if target_month == 1: # decrement for next iteration
                 target_month = 12
+                target_year -= 1
                 target_day = fetch_days_in_month(12)         
 
             else:
