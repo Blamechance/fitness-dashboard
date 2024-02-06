@@ -123,7 +123,10 @@ def fetch_days_in_month(input_month):
         return 30
     elif input_month in MONTHS_WITH_31_DAYS:
         return 31
-    return 28
+    elif input_month == 2:
+        return 28
+    else:
+        return False
 
 # Following date functions should be refactored to decrement only before commiting a transaction.
 def fetch12mXAxis():
@@ -242,12 +245,17 @@ def fetch6mXAxis():
 def fetch3mXAxis():
     def closest_date_fact_7(input_date, input_month):
         exact_match = [7,14,21]
-        if input_date in exact_match:
-            return input_date
+        if input_date in exact_match: #if aligned to desired ticks, return
+            return input_date #if last date, return
+        
         if input_date == fetch_days_in_month(input_month):
             return input_date
         
-        if input_date < 7:
+
+        # else, handle per case: 
+
+        if input_date < 7: # handle needing decrement to last month
+            print("ERROR HERE 3 \n\n")
             return fetch_days_in_month(input_month-1)
         if input_date < 14:
             return 7
@@ -261,37 +269,61 @@ def fetch3mXAxis():
     target_month = int(current_month)
     counter = 0
  
-    while counter < 12: # Decrement datetime object, for next axis tick: 
-        if target_month <= 1 and target_day == 7: # if date is Jan 7th, decrement to prev year Dec 31st
+    # From current date, loop back in 7 day increments to populate dates for date axis.  
+    while counter < 12: 
+        
+        # if date is Jan 7th (year decrement needed) - Take today's date then decrement to prev year Dec 31st for next iter:
+        if target_month <= 1 and target_day == 7:
             new_date = date(target_year, target_month, target_day)
             target_month = 12
             target_year = target_year - 1
             target_day = 31
         
+        # if last date of month - take tick, then decrement to 21st:
         elif target_day == fetch_days_in_month(target_month):
             new_date = date(target_year, target_month, target_day)
+            # decrement: 
             target_day = 21
-
+        
+        # if date >= 21st but not last date, round tick to 21st and decrement to 14th: 
         elif target_day >= 21:
             target_day = 21
             new_date = date(target_year, target_month, target_day)
+            # decrement: 
             target_day = 14
+        
+        # if date >= 14 but not 21, round tick to 14th and decrement to 7th: 
+        elif target_day >= 14:
+            target_day = 14
+            new_date = date(target_year, target_month, target_day)
+            # decrement: 
+            target_day = 7
 
-        else: #else, decrement to closest date that is factor of 7. 
-            target_day = closest_date_fact_7(target_day, target_month)
+        # if date >= 7 but not 14, round tick to 7th and decrement to last date of last month: 
+        elif target_day >= 7:
+            target_day = 7
             new_date = date(target_year, target_month, target_day)
 
-            if target_day <= 7: 
-                target_day = fetch_days_in_month(target_month-1)
-                target_month = target_month-1
-            else: 
-                target_day -= 7
+            # decrement: 
+            target_day = fetch_days_in_month(target_month-1)
+            target_month = target_month-1
+            
+
+        # if date is earlier than 7th, take last month's last date as tick:
+        elif target_day < 7:
+            target_day = closest_date_fact_7(target_day, target_month)
+            target_month = target_month-1
+            new_date = date(target_year, target_month, target_day)
+
+            #decrement to 21st (next ticket after last date):
+            target_day = 21
 
         #create target month's datetimeobject and append to list
+            print(f"prior to creating tick:\n{target_year},{target_month},{target_day}")
         new_axis_tick = new_date.strftime("%d %b, %Y")
         prev_3_months.append(new_axis_tick)
 
-        counter += 1 
+        counter += 1
 
     prev_3_months.reverse()
     return prev_3_months
