@@ -255,7 +255,6 @@ def fetch3mXAxis():
         # else, handle per case: 
 
         if input_date < 7: # handle needing decrement to last month
-            print("ERROR HERE 3 \n\n")
             return fetch_days_in_month(input_month-1)
         if input_date < 14:
             return 7
@@ -315,11 +314,10 @@ def fetch3mXAxis():
             target_month = target_month-1
             new_date = date(target_year, target_month, target_day)
 
-            #decrement to 21st (next ticket after last date):
+            #decrement to 21st (next tick after last date):
             target_day = 21
 
         #create target month's datetimeobject and append to list
-            print(f"prior to creating tick:\n{target_year},{target_month},{target_day}")
         new_axis_tick = new_date.strftime("%d %b, %Y")
         prev_3_months.append(new_axis_tick)
 
