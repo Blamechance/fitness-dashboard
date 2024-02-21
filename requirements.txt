@@ -6,7 +6,7 @@ cffi==1.15.1
 click==8.1.7
 colorama==0.4.4
 cryptography==3.4.8
-dbus-python==1.2.18
+dbus-python>=0.0
 distro==1.7.0
 distro-info==1.0
 flask==3.0.0
@@ -28,9 +28,9 @@ netifaces==0.11.0
 numpy==1.24.4
 oauthlib==3.2.0
 pandas==2.0.3
-pycairo==1.23.0
+pycairo>=0.0
 pycparser==2.21
-PyGObject==3.42.1
+PyGObject>=0.0
 pyinotify==0.9.6
 PyJWT==2.3.0
 pyOpenSSL==21.0.0
